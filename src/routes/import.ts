@@ -1,21 +1,18 @@
-import { Router, type Response } from 'express';
-import { z } from 'zod';
 import { parse } from 'csv-parse/sync';
 import { db } from '../db/client.js';
 import { industries, employeeSizeRanges } from '../db/schema.js';
-import { requireAdmin } from '../middleware/auth.js';
+import type { CurrentUser } from '../middleware/auth.js';
 import { getRegionTree, descendantCountryCodes, type RegionTreeNode } from '../lib/regions.js';
 import { companyAttributes } from '../config/company-attributes.js';
 import { saveCompany } from './companies.js';
 
-export const importRouter = Router();
+// The Admin page's CSV import (its route is in admin.ts): bulk-adds companies
+// from pasted CSV — a header row naming the columns, then one company per row.
+// Each row is turned into the same fields the add-company form submits and saved
+// with saveCompany() — so imported companies are validated and saved exactly
+// like ones added by hand, each row in its own transaction.
 
-// Bulk-adds companies from pasted CSV: a header row naming the columns, then one
-// company per row. Each row is turned into the same fields the add-company form
-// submits and saved with saveCompany() — so imported companies are validated and
-// saved exactly like ones added by hand, each row in its own transaction.
-
-const columns = [
+export const importColumns = [
   { name: 'name', description: 'Required.' },
   { name: 'websiteUrl', description: 'Required, e.g. acme.com.' },
   { name: 'careersUrl', description: 'e.g. acme.com/careers' },
@@ -28,7 +25,8 @@ const columns = [
   { name: 'generalNotes', description: 'Visible to signed-in users only.' },
   ...companyAttributes.map((a) => ({ name: a.key, description: `${a.label}: yes, no, or blank for unknown.` })),
 ];
-const columnNames = columns.map((c) => c.name);
+const columnNames = importColumns.map((c) => c.name);
+export const importHeaderRow = columnNames.join(',');
 const requiredColumns = ['name', 'websiteUrl'];
 
 const triStateValues = new Map([['yes', 'true'], ['no', 'false'], ['', '']]);
@@ -115,30 +113,20 @@ interface ImportResult {
   error?: string;
 }
 
-function renderImportPage(res: Response, opts: { csv?: string; error?: string; results?: ImportResult[] } = {}) {
-  res.status(opts.error ? 400 : 200).render('admin/import', { ...opts, columns, headerRow: columnNames.join(',') });
-}
+/** What the Admin page shows after an import: why the CSV couldn't be used
+ * (alongside it, to fix), or how each row went. */
+export type ImportOutcome = { csv: string; error: string } | { results: ImportResult[] };
 
-importRouter.get('/admin/import', requireAdmin, (_req, res) => {
-  renderImportPage(res);
-});
-
-const importSchema = z.object({ csv: z.string().trim().min(1, 'Paste the CSV to import.') }).strict();
-
-importRouter.post('/admin/import', requireAdmin, async (req, res) => {
-  const parsed = importSchema.safeParse(req.body);
-  if (!parsed.success) return renderImportPage(res, { error: parsed.error.issues[0]?.message });
-  const { csv } = parsed.data;
-
+export async function importCompanies(csv: string, user: CurrentUser): Promise<ImportOutcome> {
   let rows: string[][];
   try {
     rows = parse(csv, { bom: true, trim: true, skip_empty_lines: true });
   } catch (err) {
-    return renderImportPage(res, { csv, error: `That couldn't be read as CSV: ${(err as Error).message}` });
+    return { csv, error: `That couldn't be read as CSV: ${(err as Error).message}` };
   }
   const [header = [], ...records] = rows;
   const problem = headerProblem(header) ?? (records.length === 0 ? 'There are no companies below the header row.' : null);
-  if (problem) return renderImportPage(res, { csv, error: problem });
+  if (problem) return { csv, error: problem };
 
   const locations = locationLookup(await getRegionTree());
   const industryName = await industryNamer();
@@ -146,9 +134,8 @@ importRouter.post('/admin/import', requireAdmin, async (req, res) => {
   const results: ImportResult[] = records.map((record) => {
     const row: Row = Object.fromEntries(header.map((column, i) => [column, record[i]]));
     const prepared = rowToForm(row, locations, industryName);
-    const saved = prepared.ok ? saveCompany(prepared.form, req.currentUser!) : prepared;
+    const saved = prepared.ok ? saveCompany(prepared.form, user) : prepared;
     return { name: row.name || '(no name)', ...saved };
   });
-
-  renderImportPage(res, { results });
-});
+  return { results };
+}

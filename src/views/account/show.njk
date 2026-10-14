@@ -9,7 +9,7 @@
   {% if messages.nameError %}<p class="error">{{ messages.nameError }}</p>{% endif %}
   <form method="post" action="/users/{{ viewedUser.id }}">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}">
-    <label>Display name
+    <label>Display name (up to {{ displayNameMaxLength }} characters)
       <input class="input" type="text" name="displayName" value="{{ viewedUser.displayName }}" required maxlength="{{ displayNameMaxLength }}">
     </label>
     <button class="btn" type="submit">Save name</button>
@@ -47,7 +47,7 @@
         <input class="input" type="password" name="currentPassword" required>
       </label>
     {% endif %}
-    <label>New password
+    <label>New password (at least {{ passwordMinLength }} characters)
       <input class="input" type="password" name="newPassword" minlength="{{ passwordMinLength }}" required>
     </label>
     <button class="btn" type="submit">{% if isSelf %}Change password{% else %}Set password{% endif %}</button>

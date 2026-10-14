@@ -6,24 +6,32 @@
  *   Unknown), set on the add/edit company form.
  * - reviewReports: things reviewers report by ticking a box on their review,
  *   shown on each company as the number of reviewers who reported it.
- * - reviewsConfig: who can read the reviews themselves.
+ * - reviewsSetting: who can read the reviews themselves.
  *
  * The company page, the search results, the search filters, and the forms all
- * loop over these lists rather than naming fields individually — so changing who
- * can see something is a one-word change to its `visibility` here, instead of a
- * hunt through templates and query code.
+ * loop over these lists rather than naming fields individually.
  *
- * IMPORTANT: this has to be enforced server-side too, not just in what the UI
- * renders. The search route checks visibility before honoring a filter param, so
- * a hidden item can't be filtered on by typing the param into the URL; and the
+ * Who can see each one is set by admins on the Admin page (stored in the
+ * database — see src/lib/visibility.ts). The `defaultVisibility` here applies
+ * only until an admin first saves those settings.
+ *
+ * IMPORTANT: visibility has to be enforced server-side too, not just in what the
+ * UI renders. The search route checks it before honoring a filter param, so a
+ * hidden item can't be filtered on by typing the param into the URL; and the
  * company form only shows and saves the attributes its editor can see.
  */
 
-/** Who can see something: anyone, any signed-in user, or admins only. */
-export type Visibility = 'public' | 'user' | 'admin';
+/** Who can see something, as offered on the Admin page. */
+export const visibilityLevels = [
+  { value: 'public', label: 'Everyone' },
+  { value: 'user', label: 'Signed-in members' },
+  { value: 'admin', label: 'Admins only' },
+] as const;
+
+export type Visibility = typeof visibilityLevels[number]['value'];
 
 /** The signed-in user, or null/undefined for an anonymous visitor. */
-type Viewer = { role: 'user' | 'admin' } | null | undefined;
+export type Viewer = { role: 'user' | 'admin' } | null | undefined;
 
 export function canView(visibility: Visibility, viewer: Viewer): boolean {
   if (visibility === 'public') return true;
@@ -31,10 +39,20 @@ export function canView(visibility: Visibility, viewer: Viewer): boolean {
   return viewer?.role === 'admin';
 }
 
+/** Anything whose visibility admins can set. Every key is unique across all of them. */
+export interface VisibilitySettingDef {
+  key: string;
+  label: string;
+  /** Optional helper text shown next to the label — e.g. clarifying criteria */
+  helpText?: string;
+  defaultVisibility: Visibility;
+}
+
 // ---------- Company attributes ----------
 
-export interface CompanyAttributeDef {
-  /** Matches the corresponding column name on companies in src/db/schema.ts */
+export interface CompanyAttributeDef extends VisibilitySettingDef {
+  /** Matches the corresponding column name on companies in src/db/schema.ts.
+   * Its visibility also decides who can see and change it on the company form. */
   key:
     | 'hiresRemote'
     | 'listsSalary'
@@ -44,84 +62,67 @@ export interface CompanyAttributeDef {
     | 'activelyHiring'
     | 'publicHiringProcess'
     | 'postsGhostJobs';
-  label: string;
-  /** Optional helper text shown next to the label — e.g. clarifying criteria */
-  helpText?: string;
-  /** Who can see this attribute's value — and, since it's on the company form,
-   * who can see and change it there. */
-  visibility: Visibility;
   /** How the search can filter on it: 'require' shows only companies where it's
    * Yes; 'exclude' hides companies where it's Yes. */
   filter: 'require' | 'exclude' | null;
 }
 
 export const companyAttributes: CompanyAttributeDef[] = [
-  { key: 'hiresRemote', label: 'Hires remote', visibility: 'public', filter: 'require' },
-  { key: 'listsSalary', label: 'Lists salary', visibility: 'public', filter: 'require' },
-  { key: 'requiresTakeHome', label: 'Requires take-home', visibility: 'public', filter: 'exclude' },
-  { key: 'requires5PlusCalls', label: 'Requires 5+ calls', visibility: 'public', filter: 'exclude' },
-  { key: 'requiresWorkTrial', label: 'Requires work trial', visibility: 'public', filter: 'exclude' },
+  { key: 'hiresRemote', label: 'Hires remote', defaultVisibility: 'public', filter: 'require' },
+  { key: 'listsSalary', label: 'Lists salary', defaultVisibility: 'public', filter: 'require' },
+  { key: 'requiresTakeHome', label: 'Requires take-home', defaultVisibility: 'public', filter: 'exclude' },
+  { key: 'requires5PlusCalls', label: 'Requires 5+ calls', defaultVisibility: 'public', filter: 'exclude' },
+  { key: 'requiresWorkTrial', label: 'Requires work trial', defaultVisibility: 'public', filter: 'exclude' },
   {
     key: 'activelyHiring',
     label: 'Actively hiring',
     helpText: 'Criteria: 5+ roles currently open',
-    visibility: 'public',
+    defaultVisibility: 'public',
     filter: 'require',
   },
   {
     key: 'publicHiringProcess',
     label: 'Publishes hiring process',
     helpText: 'Whether the stages are listed on the job description or website — not what they are',
-    visibility: 'public',
+    defaultVisibility: 'public',
     filter: 'require',
   },
   {
     key: 'postsGhostJobs',
     label: 'Posts ghost jobs',
     helpText: 'Job listings for roles that aren\'t actually being filled',
-    visibility: 'public',
+    defaultVisibility: 'public',
     filter: 'exclude',
   },
 ];
 
-export function visibleAttributes(viewer: Viewer): CompanyAttributeDef[] {
-  return companyAttributes.filter((a) => canView(a.visibility, viewer));
-}
-
 // ---------- Review reports ----------
 
-export interface ReviewReportDef {
-  /** Matches the corresponding boolean column on reviews in src/db/schema.ts */
+export interface ReviewReportDef extends VisibilitySettingDef {
+  /** Matches the corresponding boolean column on reviews in src/db/schema.ts.
+   * Its visibility covers how many reviewers reported it for a company, and the
+   * report on individual reviews (which also need the reviews' own visibility).
+   * Any reviewer can still report it — this only limits who sees it. */
   key: 'noReplyAfterApplication' | 'noReplyAfterCall';
-  label: string;
-  /** Who can see how many reviewers reported this for a company, and the report
-   * on individual reviews (which also need reviewsConfig's visibility). Any
-   * reviewer can still report it — this only limits who sees it. */
-  visibility: Visibility;
 }
 
 export const reviewReports: ReviewReportDef[] = [
-  { key: 'noReplyAfterApplication', label: 'No reply after application', visibility: 'public' },
-  { key: 'noReplyAfterCall', label: 'No reply after a call', visibility: 'public' },
+  { key: 'noReplyAfterApplication', label: 'No reply after application', defaultVisibility: 'public' },
+  { key: 'noReplyAfterCall', label: 'No reply after a call', defaultVisibility: 'public' },
 ];
-
-export function visibleReviewReports(viewer: Viewer): ReviewReportDef[] {
-  return reviewReports.filter((r) => canView(r.visibility, viewer));
-}
 
 // ---------- Reviews ----------
 
-export const reviewsConfig: { visibility: Visibility } = {
-  /** Who can read reviews: their text and star ratings, each company's average
-   * rating, and sorting the search by rating. Anyone signed in can still write
-   * one — this only limits who reads them. Reviewers' display names are a
-   * separate, fixed rule: signed-in users only (see MASKED_NAME). */
-  visibility: 'public',
+/** Who can read reviews: their text and star ratings, each company's average
+ * rating, and sorting the search by rating. Anyone signed in can still write one
+ * — this only limits who reads them. Reviewers' display names are a separate,
+ * fixed rule: signed-in users only (see MASKED_NAME). */
+export const reviewsSetting: VisibilitySettingDef = {
+  key: 'reviews',
+  label: 'Reviews and ratings',
+  helpText: 'Review text and stars, company averages, and sorting by rating. Reviewers\' names are always for signed-in members only.',
+  defaultVisibility: 'public',
 };
-
-export function canViewReviews(viewer: Viewer): boolean {
-  return canView(reviewsConfig.visibility, viewer);
-}
 
 /** Shown in place of a reviewer's display name to anyone not signed in. */
 export const MASKED_NAME = '[Masked]';

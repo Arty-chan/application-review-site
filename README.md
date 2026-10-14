@@ -13,10 +13,10 @@ lines of vanilla JS), deployed as a single Docker container behind Caddy.
 Functionally complete for a first local run-through: auth (invite-only
 registration, login, password reset), companies (add/edit/search/filter/sort),
 reviews (add/edit/delete/flag), favorites, account management (self-service
-and admin-on-behalf-of), admins adding users directly (`/admin/users/new`),
-admin flag moderation, and admin bulk import of companies from pasted CSV
-(`/admin/import`) are all built and have been exercised end to end against a
-real database.
+and admin-on-behalf-of), and an Admin page (`/admin`) for flag moderation,
+adding users, choosing who can see what, and bulk import of companies from
+pasted CSV are all built and have been exercised end to end against a real
+database.
 
 Known gaps, worth knowing about before you rely on this:
 
@@ -68,7 +68,7 @@ npm run create-admin -- you@example.com yourpassword "Your Name"
 npm run dev
 ```
 
-Note: You can choose a different port number other than 6559. Just make sure to update all instances.
+**Note**: You can choose a different port number other than 6559. Just make sure to update all instances.
 
 The site is at http://localhost:6559 — stop it with Ctrl+C. (On Windows, the
 first run may bring up a Windows Firewall prompt for Node; allowing or
@@ -79,9 +79,9 @@ To start over with an empty database, stop the site, delete the `data` folder
 three steps before `npm run dev` again.
 
 Log in with the admin account you just created. From there: use **Add user**
-(in the nav bar) to make a second, regular account with a password you pick,
-then log in as it in a private window to see the regular-user experience. Add
-a company, leave a review, try the search filters. With `RESEND_API_KEY` left
+on the **Admin** page (in the nav bar) to make a second, regular account with
+a password you pick, then log in as it in a private window to see the
+regular-user experience. Add a company, leave a review, try the search filters. With `RESEND_API_KEY` left
 empty, no email is sent — invite, reset and verify links are printed in the
 `npm run dev` console instead.
 
@@ -106,14 +106,15 @@ Two layers:
   logic that's easy to get subtly wrong and hard to eyeball-check: URL/domain
   normalization for duplicate detection, the region tree's recursive expansion,
   password hashing, the auth-token lifecycle (expiry, single-use,
-  purpose-scoping), the visibility rules in `src/config/`, and schema-level
+  purpose-scoping), the visibility rules and saved settings, and schema-level
   invariants (one review per user per company, cascading deletes, the
   last-admin guard).
 - **Route tests** (`tests/routes`) — the real Express app, every middleware
   included (sessions, CSRF, auth guards), started on a random port and driven
   over HTTP by a small cookie-keeping client in `tests/helpers/http.ts`. They
   cover the main flow of each feature: login/logout, password reset, invites,
-  admins adding users, adding/editing/searching/sorting/deleting companies,
+  the Admin page (adding users, visibility settings), adding/editing/
+  searching/sorting/deleting companies,
   CSV import, reviews (including who can read them), flags, no-reply reports,
   favorites, account settings and roles — plus the basic permission checks
   (signed-out visitors, other users, non-admins).
@@ -139,9 +140,26 @@ each one (see `tests/routes/reviews.test.ts`).
 | `npm run db:migrate` | Apply any unapplied migrations to the database |
 | `npm run db:studio` | Drizzle's local DB browser/GUI |
 
-Changing `src/db/schema.ts`? Run `db:generate` then `db:migrate` — generate writes
-a new migration, migrate applies it. Migrations are plain, readable `.sql` files
-under `src/db/migrations/`, safe to open and read before running.
+### Changing the database
+
+When you change `src/db/schema.ts`, on your own computer:
+
+1. `npm run db:generate` writes a new migration — a plain, readable `.sql` file
+   in `src/db/migrations/`. Open it and check it does what you expect.
+2. `npm run db:migrate` applies it to your local database.
+3. Commit the migration together with the code that needs it.
+
+Every other copy of the database only needs step 2, since the migration is
+already written: your own after pulling a change that includes one, and the
+live site's. On the VPS, follow "To deploy an update" below, which backs the
+database up first.
+
+Most changes (a new table or column) generate a single `CREATE` or `ALTER`
+statement. Changing an existing column (making it optional, say) makes Drizzle
+rebuild the whole table, with a `DROP TABLE` — and on SQLite, dropping a table
+can also delete the rows of other tables that point at it. If a migration
+contains `DROP TABLE`, try it on a copy of the database first and check
+nothing else lost rows.
 
 ### The `overrides` entry in package.json
 
@@ -175,13 +193,14 @@ src/
                                 password length, and the longest display name.
     company-attributes.ts      Registry of company attributes (tri-state tags like
                                 "Posts ghost jobs"), review reports ("No reply
-                                after application"), and the reviews themselves —
-                                the single place that decides who sees each one:
-                                public, signed-in, or admin-only. Reviewers' names
+                                after application"), and the reviews themselves,
+                                with each one's default visibility. Admins choose
+                                who sees each one on the Admin page (saved in the
+                                database — see lib/visibility.ts). Reviewers' names
                                 are always signed-in only ("[Masked]" otherwise).
   lib/                         Framework-agnostic logic: passwords, tokens, email,
-                                sessions, the shared account-form rules, domain
-                                normalization, region tree helpers
+                                sessions, the shared account-form rules, who can
+                                see what, domain normalization, region tree helpers
   middleware/                  Auth guards, CSRF, rate limiting
   routes/                      Route handlers, grouped by resource
   views/                       Nunjucks templates (base.njk + _macros.njk shared
@@ -232,21 +251,33 @@ Production-mode behavior, all switched on by `NODE_ENV=production`, which the
 Docker image sets (don't put `NODE_ENV` in `.env`):
 
 - The app **refuses to start** if `SESSION_SECRET` is unset or still
-  `changeme` — `docker compose logs app` will say so.
+  `changeme` — `docker compose logs application-review-site` will say so.
 - It **trusts exactly one proxy hop** (Caddy) for the client's IP and HTTPS
   status. That's what lets the secure session cookie be sent and gives the
   rate limiters each visitor's real IP. If you ever put another proxy in front
   of Caddy (a CDN, say), the `trust proxy` setting in `src/app.ts` needs to
   change to match.
 
-To deploy an update, rebuild and then apply any new migrations — the app
-doesn't migrate the database by itself, and new code expects the new schema:
+To deploy an update, back up the database, then apply any new migrations
+before starting the new version — the app doesn't migrate the database by
+itself, and new code expects the new schema. The app is stopped meanwhile, so
+the backup is a complete copy (while it runs, SQLite keeps its latest writes in
+a separate `-wal` file beside the database) and no one uses the new code before
+its migration is in:
 
 ```bash
 git pull
-docker compose up -d --build
-docker compose exec application-review-site npx drizzle-kit migrate
+docker compose build
+docker compose stop
+cp -a data "data-backup-$(date +%F)"   # prefix with sudo if you're not root
+docker compose run --rm application-review-site npx drizzle-kit migrate
+docker compose up -d
+curl http://127.0.0.1:6559/healthz   # {"ok":true}
 ```
+
+If something goes wrong, the backup folder is a full copy of `data/`: stop the
+app, put the backup back in place of `data/`, check out the code you were on
+before (`git checkout <commit>`), and `docker compose up -d --build`.
 
 The container binds to `127.0.0.1:6559` only — not reachable from outside the
 VPS directly, only through Caddy. `./data` on the host is bind-mounted into

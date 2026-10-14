@@ -5,6 +5,7 @@ import { db } from '../../src/db/client.js';
 import { users, companies, reviews } from '../../src/db/schema.js';
 import { createToken } from '../../src/lib/tokens.js';
 import { startServer, TestClient, createUser, TEST_PASSWORD } from '../helpers/http.js';
+import { PASSWORD_MIN_LENGTH, DISPLAY_NAME_MAX_LENGTH } from '../../src/config/site.js';
 
 let baseUrl: string;
 let close: () => Promise<void>;
@@ -66,7 +67,10 @@ describe('favorites', () => {
 describe('account settings', () => {
   test('/account goes to your own account page', async () => {
     assert.equal((await member.get('/account')).location, `/users/${memberUser.id}`);
-    assert.equal((await member.get(`/users/${memberUser.id}`)).status, 200);
+    const page = await member.get(`/users/${memberUser.id}`);
+    assert.equal(page.status, 200);
+    assert.ok(page.text.includes(`Display name (up to ${DISPLAY_NAME_MAX_LENGTH} characters)`), 'the limits come from the site settings');
+    assert.ok(page.text.includes(`New password (at least ${PASSWORD_MIN_LENGTH} characters)`));
   });
 
   test('changing your display name', async () => {
@@ -169,12 +173,12 @@ describe('adding users', () => {
 
     const client = new TestClient(baseUrl);
     await client.login('added@example.test', 'added-password');
-    assert.equal((await client.get('/admin/flags')).status, 200, 'signed in, with the chosen role');
+    assert.equal((await client.get('/admin')).status, 200, 'signed in, with the chosen role');
     await db.update(users).set({ role: 'user' }).where(eq(users.id, added.id)); // keep adminUser the only admin
   });
 
   test('regular users cannot add users', async () => {
-    assert.equal((await member.get('/admin/users/new')).status, 403);
+    assert.equal((await member.get('/admin')).status, 403);
     const res = await member.post('/admin/users/new', {
       email: 'sneaky@example.test', displayName: 'Sneaky', password: 'sneaky-password', role: 'admin',
     });

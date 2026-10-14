@@ -16,7 +16,7 @@
         <a href="/account/favorites">Favorites</a>
         <a href="/account/reviews">My reviews</a>
         <a href="/invites">Invite</a>
-        {% if currentUser.role == 'admin' %}<a href="/admin/users/new">Add user</a> <a href="/admin/flags">Flags</a> <a href="/admin/import">Import</a>{% endif %}
+        {% if currentUser.role == 'admin' %}<a href="/admin">Admin</a>{% endif %}
         <a href="/users/{{ currentUser.id }}" class="tag">{{ currentUser.displayName or currentUser.email }}</a>
         <form method="post" action="/logout" class="inline-form">
           <input type="hidden" name="_csrf" value="{{ csrfToken }}">

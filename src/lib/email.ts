@@ -40,7 +40,7 @@ export async function sendEmailVerification(to: string, token: string): Promise<
 }
 
 export async function sendFlagNotification(to: string): Promise<void> {
-  const url = `${APP_URL}/admin/flags`;
+  const url = `${APP_URL}/admin#flags`;
   await send(to, 'A review was flagged', url,
     `<p>A review was flagged for admin attention. <a href="${url}">View open flags</a>.</p>`);
 }

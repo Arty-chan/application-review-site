@@ -177,6 +177,14 @@ export const favorites = sqliteTable('favorites', {
   createdAt: integer('created_at', { mode: 'timestamp' }).notNull(),
 }, (t) => [primaryKey({ columns: [t.userId, t.companyId] })]);
 
+// Who can see each company attribute, review report, and the reviews themselves,
+// as saved by an admin on the Admin page (see src/lib/visibility.ts). A key with
+// no row uses its default from src/config/company-attributes.ts.
+export const visibilitySettings = sqliteTable('visibility_settings', {
+  key: text('key').primaryKey(),
+  visibility: text('visibility', { enum: ['public', 'user', 'admin'] }).notNull(),
+});
+
 // ============================================================
 // Relations — only what the relational queries' `with: {...}` actually loads
 // (company detail: reviews + author; admin flags: flag + review + company +

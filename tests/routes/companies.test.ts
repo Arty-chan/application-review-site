@@ -6,7 +6,7 @@ import { companies, industries, reviews } from '../../src/db/schema.js';
 import {
   startServer, TestClient, createUser, seedReferenceData, companyIdFrom, resultNames, TEST_PASSWORD,
 } from '../helpers/http.js';
-import { reviewsConfig } from '../../src/config/company-attributes.js';
+import { saveVisibility } from '../../src/lib/visibility.js';
 import { SITE_NAME } from '../../src/config/site.js';
 
 let baseUrl: string;
@@ -197,7 +197,7 @@ describe('sorting', () => {
     assert.deepEqual(await sorted(anon, 'sort=rating&order=asc'), ['sortable A', 'Sortable B', 'Sortable C']);
     assert.deepEqual(await sorted(anon, 'sort=ratingCount&order=desc'), ['sortable A', 'Sortable B', 'Sortable C']);
 
-    reviewsConfig.visibility = 'user';
+    saveVisibility({ reviews: 'user' });
     try {
       for (const sort of ['rating', 'ratingCount']) {
         assert.deepEqual(await sorted(anon, `sort=${sort}&order=desc`), ['Sortable C', 'Sortable B', 'sortable A'],
@@ -206,7 +206,7 @@ describe('sorting', () => {
       const client = await signedIn();
       assert.deepEqual(await sorted(client, 'sort=rating&order=desc'), ['Sortable B', 'sortable A', 'Sortable C']);
     } finally {
-      reviewsConfig.visibility = 'public';
+      saveVisibility({ reviews: 'public' });
     }
   });
 });

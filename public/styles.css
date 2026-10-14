@@ -288,6 +288,29 @@ textarea {
   flex-basis: 100%;
 }
 
+/* One flag in the Admin page's Flags section, set apart from the one before. */
+.flag {
+  border-top: 1px solid var(--color-border);
+  margin-top: var(--space-md);
+}
+
+/* One visibility setting on the Admin page: its name, with the dropdown on the
+   right (wrapping under it on narrow screens). */
+.setting-row {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm) var(--space-md);
+  margin: 0;
+  padding: var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.setting-row select {
+  width: auto;
+}
+
 .error {
   color: #b3261e;
 }

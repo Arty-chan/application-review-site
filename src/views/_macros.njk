@@ -51,7 +51,7 @@
   {% endif %}
 {% endmacro %}
 
-{# On the review forms: who will be able to read the review (reviewsConfig in src/config/company-attributes.ts). #}
+{# On the review forms: who will be able to read the review (set on the Admin page). #}
 {% macro reviewVisibilityNote(visibility) %}
   <p class="note">
     {%- if visibility == 'public' %}Your review will be public, but only signed-in members can see your display name.

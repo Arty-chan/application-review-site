@@ -5,7 +5,8 @@ import { db } from '../db/client.js';
 import { reviews, companies, users, reviewFlags } from '../db/schema.js';
 import { requireAuth, requireReviewOwnerOrAdmin, type Review } from '../middleware/auth.js';
 import { sendFlagNotification } from '../lib/email.js';
-import { reviewReports, reviewsConfig } from '../config/company-attributes.js';
+import { reviewReports } from '../config/company-attributes.js';
+import { reviewVisibility } from '../lib/visibility.js';
 
 export const reviewsRouter = Router();
 
@@ -39,7 +40,7 @@ function parseJobProcessDate(input: string | undefined): Date {
 async function renderReviewForm(res: Response, review: Review, error?: string) {
   const company = await db.query.companies.findFirst({ where: eq(companies.id, review.companyId) });
   res.status(error ? 400 : 200).render('reviews/edit', {
-    company, review, error, reviewReports, reviewVisibility: reviewsConfig.visibility,
+    company, review, error, reviewReports, reviewVisibility: reviewVisibility(),
   });
 }
 

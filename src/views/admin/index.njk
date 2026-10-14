@@ -1,0 +1,148 @@
+{% extends "base.njk" %}
+{% import "_macros.njk" as m %}
+{% block title %}Admin — {{ siteName }}{% endblock %}
+{% block content %}
+
+{% macro flagEntry(flag) %}
+  <div class="flag">
+    <p>
+      Flagged by {{ flag.flaggedByUser.displayName if flag.flaggedByUser else 'a since-deleted account' }}
+      on {{ flag.createdAt | isoDate }}: {{ flag.comment }}
+    </p>
+    <p>
+      Review of <a href="/companies/{{ flag.review.company.id }}">{{ flag.review.company.name }}</a>
+      by {{ flag.review.user.displayName if flag.review.user else flag.review.deletedUserDisplayName or 'a since-deleted account' }}
+      — {{ m.reviewRating(flag.review.rating) }}
+    </p>
+    <p class="review-body">{{ flag.review.comment }}</p>
+    {% if flag.status == 'open' %}
+      <form method="post" action="/flags/{{ flag.id }}/resolve">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+        <button class="btn btn-secondary" type="submit">Dismiss flag</button>
+      </form>
+    {% endif %}
+  </div>
+{% endmacro %}
+
+<h1>Admin</h1>
+
+<div class="card" id="flags">
+  <h3>Flags</h3>
+  {% for flag in openFlags %}
+    {{ flagEntry(flag) }}
+  {% else %}
+    <p class="note">No open flags.</p>
+  {% endfor %}
+  {% if dismissedFlags.length %}
+    <details>
+      <summary>Dismissed flags ({{ dismissedFlags.length }})</summary>
+      {% for flag in dismissedFlags %}{{ flagEntry(flag) }}{% endfor %}
+    </details>
+  {% endif %}
+</div>
+
+<div class="card" id="add-user">
+  <h3>Add user</h3>
+  <p class="note">The account is ready to use straight away. Share the password with them; they can change it from their account page.</p>
+  {% if addUser.error %}<p class="error">{{ addUser.error }}</p>{% endif %}
+  <form method="post" action="/admin/users/new#add-user">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <label>Email
+      <input class="input" type="email" name="email" value="{{ addUser.values.email }}" required>
+    </label>
+    <label>Display name (up to {{ displayNameMaxLength }} characters)
+      <input class="input" type="text" name="displayName" value="{{ addUser.values.displayName }}" required maxlength="{{ displayNameMaxLength }}">
+    </label>
+    <label>Password (at least {{ passwordMinLength }} characters)
+      <input class="input" type="password" name="password" required minlength="{{ passwordMinLength }}" autocomplete="new-password">
+    </label>
+    <label>Role
+      <select name="role" class="input">
+        <option value="user" {% if addUser.values.role == 'user' %}selected{% endif %}>user</option>
+        <option value="admin" {% if addUser.values.role == 'admin' %}selected{% endif %}>admin</option>
+      </select>
+    </label>
+    <button class="btn" type="submit">Add user</button>
+  </form>
+</div>
+
+<div class="card" id="settings">
+  <h3>Settings: who can see what</h3>
+  <p class="note">Changes apply as soon as they're saved.</p>
+  {% if settings.message %}<p>{{ settings.message }}</p>{% endif %}
+  {% if settings.error %}<p class="error">{{ settings.error }}</p>{% endif %}
+  <form method="post" action="/admin/settings#settings">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    {% for group in settingGroups %}
+      <h4>{{ group.name }}</h4>
+      {% if group.note %}<p class="note">{{ group.note }}</p>{% endif %}
+      {% for setting in group.settings %}
+        <label class="setting-row">
+          <span>{{ setting.label }}{% if setting.helpText %} {{ m.infoTip(setting.helpText) }}{% endif %}</span>
+          <select name="{{ setting.key }}" class="input">
+            {% for level in visibilityLevels %}
+              <option value="{{ level.value }}" {% if setting.visibility == level.value %}selected{% endif %}>{{ level.label }}</option>
+            {% endfor %}
+          </select>
+        </label>
+      {% endfor %}
+    {% endfor %}
+    <button class="btn" type="submit">Save settings</button>
+  </form>
+</div>
+
+<div class="card" id="import">
+  <h3>Import companies</h3>
+  {% if csvImport.results %}
+    <p>Added {{ csvImport.results | selectattr('ok') | length }} of {{ csvImport.results.length }}.</p>
+    <ul>
+      {% for result in csvImport.results %}
+        <li>
+          {% if result.ok %}
+            <a href="/companies/{{ result.id }}">{{ result.name }}</a> — added
+          {% else %}
+            {{ result.name }} — <span class="error">{{ result.error }}</span>
+          {% endif %}
+        </li>
+      {% endfor %}
+    </ul>
+    <p><a href="/admin#import">Import more</a></p>
+  {% else %}
+    <p>
+      Paste CSV below: a header row naming the columns, then one company per row.
+      Only <code>name</code> and <code>websiteUrl</code> are required — leave out any
+      other column, or leave its cells blank. Columns can be in any order.
+    </p>
+
+    <details>
+      <summary>Columns, and an example</summary>
+      <table>
+        <thead><tr><th>Column</th><th>Accepts</th></tr></thead>
+        <tbody>
+          {% for column in importColumns %}
+            <tr><td><code>{{ column.name }}</code></td><td>{{ column.description }}</td></tr>
+          {% endfor %}
+        </tbody>
+      </table>
+
+      <p>Every column, ready to copy as a header row:</p>
+      <pre>{{ importHeaderRow }}</pre>
+
+      <p>For example — a value containing a comma needs double quotes around it:</p>
+      <pre>name,websiteUrl,location,industry,hiresRemote
+Acme,acme.com,Germany,Software &amp; Technology,yes
+"Globex, Inc.",globex.com,EMEA,,no</pre>
+    </details>
+
+    {% if csvImport.error %}<p class="error">{{ csvImport.error }}</p>{% endif %}
+    <form method="post" action="/admin/import#import">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <label>CSV
+        <textarea class="input" name="csv" rows="12" required>{{ csvImport.csv }}</textarea>
+      </label>
+      <button class="btn" type="submit">Import</button>
+    </form>
+  {% endif %}
+</div>
+
+{% endblock %}

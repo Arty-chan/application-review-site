@@ -11,9 +11,11 @@ import {
   getRegionTree, descendantCountryCodes, groupCountriesByRegion, summarizeCountryGroups, type RegionTreeNode,
 } from '../lib/regions.js';
 import {
-  companyAttributes, visibleAttributes, reviewReports, visibleReviewReports, type ReviewReportDef,
-  reviewsConfig, canViewReviews, MASKED_NAME,
+  companyAttributes, reviewReports, type ReviewReportDef, MASKED_NAME,
 } from '../config/company-attributes.js';
+import {
+  visibleAttributes, visibleReviewReports, reviewVisibility, canViewReviews,
+} from '../lib/visibility.js';
 
 export const companiesRouter = Router();
 
@@ -43,8 +45,8 @@ interface CompanyMeta {
 
 /** Batch-loads countries/industries/review stats for a page of companies — a
  * handful of IN-based queries regardless of page size, not one query per company.
- * Ratings follow the reviews' visibility (reviewsConfig); review report counts
- * follow each report's own. */
+ * Ratings follow the reviews' visibility; review report counts follow each
+ * report's own (see src/lib/visibility.ts). */
 async function loadCompanyMeta(companyIds: number[], viewer: CurrentUser | undefined): Promise<Map<number, CompanyMeta>> {
   const meta = new Map<number, CompanyMeta>();
   for (const id of companyIds) {
@@ -170,7 +172,7 @@ companiesRouter.get('/', async (req, res) => {
   const whereClause = and(...conditions);
 
   // Alphabetical A–Z unless chosen otherwise. Only viewers who can see ratings
-  // (see reviewsConfig) can sort by them — the order would give them away.
+  // can sort by them — the order would give them away.
   const canSeeReviews = canViewReviews(viewer);
   const sort = req.query.sort === 'updated' ? 'updated'
     : (req.query.sort === 'rating' || req.query.sort === 'ratingCount') && canSeeReviews ? req.query.sort
@@ -416,7 +418,7 @@ companiesRouter.get('/companies/:id', async (req, res) => {
   const updatedByUser = isAuthed && company.updatedBy
     ? await db.query.users.findFirst({ where: eq(users.id, company.updatedBy) })
     : null;
-  // Reviews follow reviewsConfig's visibility. Reviewers' names are for
+  // Reviews follow their visibility setting. Reviewers' names are for
   // signed-in users only: anyone else gets MASKED_NAME, decided here so the
   // names never reach their page at all.
   const canSeeReviews = canViewReviews(viewer);
@@ -440,7 +442,7 @@ companiesRouter.get('/companies/:id', async (req, res) => {
     updatedByUser,
     isAuthed,
     canSeeReviews,
-    reviewVisibility: reviewsConfig.visibility,
+    reviewVisibility: reviewVisibility(),
     reviews: companyReviews,
     myReview: companyReviews.find((r) => r.userId === viewer?.id),
     today: new Date().toISOString().slice(0, 10),

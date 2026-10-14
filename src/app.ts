@@ -14,7 +14,6 @@ import { reviewsRouter } from './routes/reviews.js';
 import { favoritesRouter } from './routes/favorites.js';
 import { accountRouter } from './routes/account.js';
 import { adminRouter } from './routes/admin.js';
-import { importRouter } from './routes/import.js';
 import { SITE_NAME, PASSWORD_MIN_LENGTH, DISPLAY_NAME_MAX_LENGTH } from './config/site.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -107,7 +106,6 @@ app.use(reviewsRouter);
 app.use(favoritesRouter);
 app.use(accountRouter);
 app.use(adminRouter);
-app.use(importRouter);
 
 app.get('/healthz', (_req, res) => {
   res.json({ ok: true });

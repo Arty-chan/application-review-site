@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../src/db/client.js';
 import { companies, reviews, reviewFlags, users } from '../../src/db/schema.js';
 import { startServer, TestClient, createUser, resultNames, TEST_PASSWORD } from '../helpers/http.js';
-import { reviewsConfig } from '../../src/config/company-attributes.js';
+import { saveVisibility } from '../../src/lib/visibility.js';
 
 let baseUrl: string;
 let close: () => Promise<void>;
@@ -93,7 +93,7 @@ describe('writing reviews', () => {
     const company = await makeCompany();
     await postReview(author, company.id, { rating: '8', comment: 'Members only comment' });
 
-    reviewsConfig.visibility = 'user';
+    saveVisibility({ reviews: 'user' });
     try {
       const detail = await new TestClient(baseUrl).get(`/companies/${company.id}`);
       assert.doesNotMatch(detail.text, /Members only comment/);
@@ -101,7 +101,7 @@ describe('writing reviews', () => {
       assert.match(detail.text, /to see ratings, reviews/);
       assert.match((await otherUser.get(`/companies/${company.id}`)).text, /Members only comment/);
     } finally {
-      reviewsConfig.visibility = 'public';
+      saveVisibility({ reviews: 'public' });
     }
   });
 
@@ -171,14 +171,14 @@ describe('flagging reviews', () => {
     const res = await otherUser.post(`/reviews/${review.id}/flag`, { comment: 'Looks like spam' });
     assert.equal(res.location, `/companies/${company.id}`);
 
-    const flagsPage = await admin.get('/admin/flags');
+    const flagsPage = await admin.get('/admin');
     assert.equal(flagsPage.status, 200);
     assert.match(flagsPage.text, /Looks like spam/);
     assert.match(flagsPage.text, /Suspicious review text/);
 
     const flag = await db.query.reviewFlags.findFirst({ where: eq(reviewFlags.reviewId, review.id) });
     assert.equal(flag?.status, 'open');
-    await admin.post(`/flags/${flag!.id}/resolve`);
+    assert.equal((await admin.post(`/flags/${flag!.id}/resolve`)).location, '/admin#flags');
     const dismissed = await db.query.reviewFlags.findFirst({ where: eq(reviewFlags.id, flag!.id) });
     assert.equal(dismissed?.status, 'dismissed');
   });
@@ -199,8 +199,8 @@ describe('flagging reviews', () => {
     assert.ok(!flagEmails.some((line) => line.endsWith(` to ${optedOut.email}`)));
   });
 
-  test('regular users cannot see the flags page', async () => {
-    assert.equal((await otherUser.get('/admin/flags')).status, 403);
+  test('regular users cannot see the Admin page', async () => {
+    assert.equal((await otherUser.get('/admin')).status, 403);
   });
 });
 

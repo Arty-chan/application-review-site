@@ -5,6 +5,7 @@ import { db } from '../../src/db/client.js';
 import { users, authTokens } from '../../src/db/schema.js';
 import { createToken } from '../../src/lib/tokens.js';
 import { startServer, TestClient, createUser, TEST_PASSWORD } from '../helpers/http.js';
+import { PASSWORD_MIN_LENGTH, DISPLAY_NAME_MAX_LENGTH } from '../../src/config/site.js';
 
 let baseUrl: string;
 let close: () => Promise<void>;
@@ -138,6 +139,8 @@ describe('invites', () => {
 
     const page = await client.get(`/reset-password/${token}`);
     assert.match(page.text, /Set up your account/);
+    assert.ok(page.text.includes(`Display name (up to ${DISPLAY_NAME_MAX_LENGTH} characters)`), 'the limits come from the site settings');
+    assert.ok(page.text.includes(`Password (at least ${PASSWORD_MIN_LENGTH} characters)`));
 
     const res = await client.post(`/reset-password/${token}`, { displayName: 'New Person', password: 'new-person-password' });
     assert.equal(res.status, 302);

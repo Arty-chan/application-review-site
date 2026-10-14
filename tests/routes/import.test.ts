@@ -39,7 +39,7 @@ async function findCompany(name: string) {
 
 describe('importing companies from CSV', () => {
   test('admins are shown the columns to use before pasting', async () => {
-    const page = await admin.get('/admin/import');
+    const page = await admin.get('/admin');
     assert.equal(page.status, 200);
     for (const column of ['name', 'websiteUrl', 'location', 'industry', 'postsGhostJobs']) {
       assert.ok(page.text.includes(`<code>${column}</code>`), `should list the ${column} column`);
@@ -47,7 +47,7 @@ describe('importing companies from CSV', () => {
   });
 
   test('only admins can import', async () => {
-    assert.equal((await member.get('/admin/import')).status, 403);
+    assert.equal((await member.get('/admin')).status, 403);
     assert.equal((await member.post('/admin/import', { csv: 'name,websiteUrl\nSneaky,sneaky.com' })).status, 403);
   });
 
