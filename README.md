@@ -193,8 +193,9 @@ src/
                                 password length, and the longest display name.
     company-attributes.ts      Registry of company attributes (tri-state tags like
                                 "Posts ghost jobs"), review reports ("No reply
-                                after application"), and the reviews themselves,
-                                with each one's default visibility. Admins choose
+                                after application"), company notes, and the
+                                reviews themselves, with each one's default
+                                visibility. Admins choose
                                 who sees each one on the Admin page (saved in the
                                 database — see lib/visibility.ts). Reviewers' names
                                 are always signed-in only ("[Masked]" otherwise).

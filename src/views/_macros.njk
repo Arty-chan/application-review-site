@@ -51,6 +51,9 @@
   {% endif %}
 {% endmacro %}
 
+{# Who a visibility level (set on the Admin page) lets see something — finishes "visible to …". #}
+{% macro visibleTo(visibility) %}{% if visibility == 'public' %}everyone{% elif visibility == 'user' %}signed-in members only{% else %}admins only{% endif %}{% endmacro %}
+
 {# On the review forms: who will be able to read the review (set on the Admin page). #}
 {% macro reviewVisibilityNote(visibility) %}
   <p class="note">
@@ -133,12 +136,17 @@
   </details>
 {% endmacro %}
 
-{% macro pagination(page, totalPages, query) %}
+{# Previous / Next, and the page numbers from pageLinks in src/lib/pagination.ts — "…" where some are left out. #}
+{% macro pagination(page, totalPages, pages, query) %}
   {% if totalPages > 1 %}
-    <nav class="pagination">
-      {% if page > 1 %}<a href="?{{ query | urlWithPage(page - 1) }}">&laquo; Previous</a>{% endif %}
-      <span>Page {{ page }} of {{ totalPages }}</span>
-      {% if page < totalPages %}<a href="?{{ query | urlWithPage(page + 1) }}">Next &raquo;</a>{% endif %}
+    <nav class="pagination" aria-label="Pages">
+      {% if page > 1 %}<a href="?{{ query | urlWithPage(page - 1) }}" rel="prev">&laquo; Previous</a>{% endif %}
+      {% for p in pages %}
+        {% if not p %}<span class="note">…</span>
+        {% elif p == page %}<strong aria-current="page">{{ p }}</strong>
+        {% else %}<a href="?{{ query | urlWithPage(p) }}">{{ p }}</a>{% endif %}
+      {% endfor %}
+      {% if page < totalPages %}<a href="?{{ query | urlWithPage(page + 1) }}" rel="next">Next &raquo;</a>{% endif %}
     </nav>
   {% endif %}
 {% endmacro %}

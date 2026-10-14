@@ -10,11 +10,12 @@ import { normalizeUrl, registrableDomain } from '../lib/domain.js';
 import {
   getRegionTree, descendantCountryCodes, groupCountriesByRegion, summarizeCountryGroups, type RegionTreeNode,
 } from '../lib/regions.js';
+import { pageLinks } from '../lib/pagination.js';
 import {
   companyAttributes, reviewReports, type ReviewReportDef, MASKED_NAME,
 } from '../config/company-attributes.js';
 import {
-  visibleAttributes, visibleReviewReports, reviewVisibility, canViewReviews,
+  visibleAttributes, visibleReviewReports, reviewVisibility, canViewReviews, companyNotesVisibility, canViewCompanyNotes,
 } from '../lib/visibility.js';
 
 export const companiesRouter = Router();
@@ -196,6 +197,7 @@ companiesRouter.get('/', async (req, res) => {
     db.select({ total: sql<number>`count(*)` }).from(companies).where(whereClause),
   ]);
   const total = totalRows[0].total;
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const meta = await loadCompanyMeta(rows.map((c) => c.id), viewer);
 
@@ -208,7 +210,8 @@ companiesRouter.get('/', async (req, res) => {
     }),
     q,
     page,
-    totalPages: Math.max(1, Math.ceil(total / PAGE_SIZE)),
+    totalPages,
+    pages: pageLinks(page, totalPages),
     regionTree,
     allIndustries: await db.select().from(industries),
     employeeSizes: employeeSizeRanges,
@@ -255,7 +258,7 @@ const companyFormSchema = z.object({
   newIndustry: z.string().trim().max(60).optional(),
 }).strict();
 
-/** The form only offers the attributes its editor is allowed to see. */
+/** The form only offers the attributes (and notes) its editor is allowed to see. */
 async function renderCompanyForm(
   res: Response,
   editor: CurrentUser,
@@ -267,6 +270,7 @@ async function renderCompanyForm(
     allIndustries: await db.select().from(industries),
     employeeSizes: employeeSizeRanges,
     attributes: visibleAttributes(editor),
+    notesVisibility: canViewCompanyNotes(editor) ? companyNotesVisibility() : null,
   });
 }
 
@@ -289,11 +293,12 @@ function parseCompanyForm(body: unknown, editor: CurrentUser) {
   const websiteDomain = registrableDomain(websiteUrl);
   if (!websiteDomain) return { ok: false as const, error: 'That website URL doesn\'t look valid.' };
 
-  // Only the attributes the editor can see were on their form; the rest are left
-  // as they are rather than overwritten with "unknown".
+  // Only the attributes (and notes) the editor can see were on their form; the
+  // rest are left as they are rather than overwritten with "unknown" (or blank).
   const attributes = Object.fromEntries(
     visibleAttributes(editor).map((a) => [a.key, attributeValues[a.key]]),
   ) as Partial<typeof attributeValues>;
+  const notes = canViewCompanyNotes(editor) ? { generalNotes: generalNotes || null } : {};
 
   return {
     ok: true as const,
@@ -304,7 +309,7 @@ function parseCompanyForm(body: unknown, editor: CurrentUser) {
       websiteDomain,
       careersUrl: careersUrl ? normalizeUrl(careersUrl) : null,
       employeeSizeRange: employeeSizeRange || null,
-      generalNotes: generalNotes || null,
+      ...notes,
     },
     countryCodes,
     industryIds: industryIdList.map(Number).filter((n) => !Number.isNaN(n)),
@@ -442,6 +447,7 @@ companiesRouter.get('/companies/:id', async (req, res) => {
     updatedByUser,
     isAuthed,
     canSeeReviews,
+    canSeeNotes: canViewCompanyNotes(viewer),
     reviewVisibility: reviewVisibility(),
     reviews: companyReviews,
     myReview: companyReviews.find((r) => r.userId === viewer?.id),

@@ -211,6 +211,23 @@ describe('sorting', () => {
   });
 });
 
+describe('page links', () => {
+  test('the search results link to the pages around the current one', async () => {
+    // 65 matches: three pages of 30.
+    await db.insert(companies).values(Array.from({ length: 65 }, (_, i) => ({
+      name: `Paged ${String(i + 1).padStart(2, '0')}`,
+      websiteUrl: `https://paged-${i + 1}.example`,
+      websiteDomain: `paged-${i + 1}.example`,
+      updatedAt: new Date(),
+    })));
+    const page = (await new TestClient(baseUrl).get('/?q=paged&page=2')).text;
+    assert.equal(resultNames(page)[0], 'Paged 31');
+    assert.match(page, /<strong aria-current="page">2<\/strong>/);
+    assert.match(page, /<a href="\?q=paged&amp;page=1">1<\/a>/);
+    assert.match(page, /<a href="\?q=paged&amp;page=3">3<\/a>/);
+  });
+});
+
 describe('deleting companies', () => {
   test('an admin can delete a company', async () => {
     const admin = await signedIn('admin');

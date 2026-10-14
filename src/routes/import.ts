@@ -22,7 +22,7 @@ export const importColumns = [
     description: 'One country (name or code, e.g. Germany or DE), one region (e.g. EMEA or Europe), or "anywhere". Blank means anywhere.',
   },
   { name: 'industry', description: 'One industry. Names not listed yet are added.' },
-  { name: 'generalNotes', description: 'Visible to signed-in users only.' },
+  { name: 'generalNotes', description: 'Free text. Who can see it is set under Settings, above.' },
   ...companyAttributes.map((a) => ({ name: a.key, description: `${a.label}: yes, no, or blank for unknown.` })),
 ];
 const columnNames = importColumns.map((c) => c.name);

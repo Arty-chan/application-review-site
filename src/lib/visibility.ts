@@ -1,7 +1,7 @@
 import { db, transaction } from '../db/client.js';
 import { visibilitySettings } from '../db/schema.js';
 import {
-  canView, companyAttributes, reviewReports, reviewsSetting,
+  canView, companyAttributes, reviewReports, reviewsSetting, companyNotesSetting,
   type CompanyAttributeDef, type ReviewReportDef, type Visibility, type Viewer, type VisibilitySettingDef,
 } from '../config/company-attributes.js';
 
@@ -20,6 +20,10 @@ export const visibilityGroups: { name: string; note?: string; settings: Visibili
     name: 'Review reports',
     note: 'How many reviewers reported it, on companies and search results; the report on each review; and the Exclude filter.',
     settings: reviewReports,
+  },
+  {
+    name: 'Companies',
+    settings: [companyNotesSetting],
   },
   {
     name: 'Company attributes',
@@ -63,4 +67,12 @@ export function reviewVisibility(): Visibility {
 
 export function canViewReviews(viewer: Viewer): boolean {
   return canView(reviewVisibility(), viewer);
+}
+
+export function companyNotesVisibility(): Visibility {
+  return currentVisibility().get(companyNotesSetting.key)!;
+}
+
+export function canViewCompanyNotes(viewer: Viewer): boolean {
+  return canView(companyNotesVisibility(), viewer);
 }

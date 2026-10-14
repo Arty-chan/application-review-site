@@ -1,7 +1,7 @@
 import { test, describe } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  canView, companyAttributes, reviewReports, reviewsSetting,
+  canView, companyAttributes, reviewReports, reviewsSetting, companyNotesSetting,
 } from '../../src/config/company-attributes.js';
 
 const anonymous = undefined;
@@ -32,7 +32,7 @@ describe('registry keys', () => {
   });
 
   test('every visibility setting has its own key, since that is how its choice is saved', () => {
-    const keys = [...companyAttributes, ...reviewReports, reviewsSetting].map((s) => s.key);
+    const keys = [...companyAttributes, ...reviewReports, reviewsSetting, companyNotesSetting].map((s) => s.key);
     assert.equal(new Set(keys).size, keys.length);
   });
 });

@@ -3,7 +3,7 @@
 {% block title %}{{ siteName }}{% endblock %}
 {% block content %}
 
-<p class="note">This site is an attempt at helping people navigate their job search and share their experiences. Everything on this site is contributed by its members. Membership is invite-only. Members can flag reviews.</p>
+<p class="note">This site is an attempt at helping people navigate their job search and share their experiences. Everything on this site is contributed by its members. Membership is invite-only. Members can flag reviews. <a href="https://github.com/Arty-chan/application-review-site">Code on GitHub</a>.</p>
 
 <form method="get" action="/" class="search-layout">
   <aside class="filters card">
@@ -100,7 +100,7 @@
       </div>
     {% endfor %}
 
-    {{ m.pagination(page, totalPages, selected.query) }}
+    {{ m.pagination(page, totalPages, pages, selected.query) }}
   </section>
 </form>
 

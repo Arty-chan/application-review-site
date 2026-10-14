@@ -42,7 +42,7 @@
   {% endfor %}
 </ul>
 
-{% if isAuthed and company.generalNotes %}
+{% if canSeeNotes and company.generalNotes %}
   <h3>Notes</h3>
   <p class="review-body">{{ company.generalNotes }}</p>
 {% endif %}

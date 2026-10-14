@@ -422,11 +422,22 @@ label {
   margin: 0 0 var(--space-sm);
 }
 
+/* The search results' page links: one centered row, wrapping on narrow screens. */
 .pagination {
   display: flex;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  justify-content: center;
   align-items: center;
+  gap: var(--space-sm);
   margin-top: var(--space-lg);
+}
+
+/* Room to tap even a one-digit page number. */
+.pagination a,
+.pagination strong {
+  min-width: 2rem;
+  padding: 0.25rem;
+  text-align: center;
 }
 
 .btn-link {

@@ -55,9 +55,11 @@
     </label>
   {% endfor %}
 
-  <label>General notes (visible to signed-in users only)
-    <textarea class="input" name="generalNotes" maxlength="2000" rows="4">{{ values.generalNotes }}</textarea>
-  </label>
+  {% if notesVisibility %}
+    <label>General notes (visible to {{ m.visibleTo(notesVisibility) }})
+      <textarea class="input" name="generalNotes" maxlength="2000" rows="4">{{ values.generalNotes }}</textarea>
+    </label>
+  {% endif %}
 
   <button class="btn" type="submit">{% if companyId %}Save changes{% else %}Add company{% endif %}</button>
 </form>

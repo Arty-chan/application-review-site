@@ -7,6 +7,7 @@
  * - reviewReports: things reviewers report by ticking a box on their review,
  *   shown on each company as the number of reviewers who reported it.
  * - reviewsSetting: who can read the reviews themselves.
+ * - companyNotesSetting: who can read each company's free-text notes.
  *
  * The company page, the search results, the search filters, and the forms all
  * loop over these lists rather than naming fields individually.
@@ -110,6 +111,17 @@ export const reviewReports: ReviewReportDef[] = [
   { key: 'noReplyAfterApplication', label: 'No reply after application', defaultVisibility: 'public' },
   { key: 'noReplyAfterCall', label: 'No reply after a call', defaultVisibility: 'public' },
 ];
+
+// ---------- Company notes ----------
+
+/** Who can read each company's free-text notes — and, since they're on the
+ * company form, who can see and change them there. */
+export const companyNotesSetting: VisibilitySettingDef = {
+  key: 'generalNotes', // the notes' column on companies in src/db/schema.ts
+  label: 'Notes',
+  helpText: "The notes on each company's page, and the notes field on the company form.",
+  defaultVisibility: 'user',
+};
 
 // ---------- Reviews ----------
 
