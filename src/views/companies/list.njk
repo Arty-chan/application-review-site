@@ -1,0 +1,107 @@
+{% extends "base.njk" %}
+{% import "_macros.njk" as m %}
+{% block title %}{{ siteName }}{% endblock %}
+{% block content %}
+
+<p class="note">This site is an attempt at helping people navigate their job search and share their experiences. Everything on this site is contributed by its members. Membership is invite-only. Members can flag reviews.</p>
+
+<form method="get" action="/" class="search-layout">
+  <aside class="filters card">
+    <label>Search
+      <input class="input" type="text" name="q" value="{{ q }}" placeholder="Company name">
+    </label>
+
+    {{ m.regionTreePicker(regionTree, selected.countries, 'country', 'Region / country',
+      'Companies may be listed as hiring in a country if a whole region was selected for them.') }}
+
+    <h3>Industry</h3>
+    {% for ind in allIndustries %}
+      <label class="checkbox-label">
+        <input type="checkbox" name="industry" value="{{ ind.id }}" {% if ind.id in selected.industries %}checked{% endif %}>
+        {{ ind.name }}
+      </label>
+    {% endfor %}
+
+    <h3>Employee size</h3>
+    <select name="size" class="input">
+      <option value="">Any</option>
+      {% for size in employeeSizes %}
+        <option value="{{ size }}" {% if selected.size == size %}selected{% endif %}>{{ size }}</option>
+      {% endfor %}
+    </select>
+
+    {% if requireFilters.length %}
+      <h3>Other</h3>
+      {% for attr in requireFilters %}
+        <label class="checkbox-label" title="{{ attr.helpText }}">
+          <input type="checkbox" name="{{ attr.key }}" value="true" {% if selected.query[attr.key] == 'true' %}checked{% endif %}>
+          {{ attr.label }}
+        </label>
+      {% endfor %}
+    {% endif %}
+
+    {% set excludeFilters = excludeAttributes.concat(excludeReports) %}
+    {% if excludeFilters.length %}
+      <h3>Exclude</h3>
+      {% for filter in excludeFilters %}
+        <label class="checkbox-label" title="{{ filter.helpText }}">
+          <input type="checkbox" name="exclude" value="{{ filter.key }}" {% if filter.key in selected.exclude %}checked{% endif %}>
+          {{ filter.label }}
+        </label>
+      {% endfor %}
+      {% if excludeReports.length %}<p class="note">The no-reply options exclude a company if at least one reviewer reported it.</p>{% endif %}
+    {% endif %}
+
+    <button class="btn" type="submit">Apply filters</button>
+    <a href="/" class="btn btn-secondary">Clear</a>
+  </aside>
+
+  <section class="results">
+    <div class="sort-bar">
+      <label for="sort">Sort by</label>
+      <select id="sort" name="sort" class="input" data-autosubmit>
+        <option value="name" {% if selected.sort == 'name' %}selected{% endif %}>Alphabetical</option>
+        {% if canSeeReviews %}
+          <option value="ratingCount" {% if selected.sort == 'ratingCount' %}selected{% endif %}>Number of ratings</option>
+          <option value="rating" {% if selected.sort == 'rating' %}selected{% endif %}>Rating</option>
+        {% endif %}
+        <option value="updated" {% if selected.sort == 'updated' %}selected{% endif %}>Updated date</option>
+      </select>
+      <select name="order" class="input" aria-label="Order" data-autosubmit>
+        <option value="asc" {% if selected.order == 'asc' %}selected{% endif %}>Ascending</option>
+        <option value="desc" {% if selected.order == 'desc' %}selected{% endif %}>Descending</option>
+      </select>
+    </div>
+
+    {% if companies.length == 0 %}
+      <p>No companies match your search.</p>
+    {% endif %}
+    {% for company in companies %}
+      <div class="card company-card">
+        <h2><a href="/companies/{{ company.id }}">{{ company.name }}</a></h2>
+        {{ m.averageRating(company) }}
+        <div class="tags">
+          {% if company.hiresAnywhere %}
+            <span class="tag">Anywhere</span>
+          {% else %}
+            {% for s in company.regionSummary %}
+              <span class="tag" title="{{ s.countries | join(', ') }}">
+                {%- if s.whole %}{{ s.region }} (all)
+                {%- elif s.countries.length == 1 %}{{ s.region }}: {{ s.countries[0] }}
+                {%- else %}{{ s.region }}: {{ s.countries.length }} countries{% endif -%}
+              </span>
+            {% endfor %}
+          {% endif %}
+        </div>
+        <div class="tags">
+          {{ m.companyTags(company, attributes) }}
+          {% for report in company.reports %}<span class="tag tag-yes">{{ m.reportSummary(report) }}</span>{% endfor %}
+        </div>
+      </div>
+    {% endfor %}
+
+    {{ m.pagination(page, totalPages, selected.query) }}
+  </section>
+</form>
+
+{% endblock %}

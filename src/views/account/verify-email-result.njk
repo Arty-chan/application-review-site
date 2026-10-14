@@ -1,0 +1,14 @@
+{% extends "base.njk" %}
+{% block title %}Email verification — {{ siteName }}{% endblock %}
+{% block content %}
+
+{% if success %}
+  <h1>Email verified</h1>
+  <p>Your new email address is now active.</p>
+{% else %}
+  <h1>Link expired</h1>
+  <p>This verification link is invalid or has expired. Request a new one from your account page.</p>
+{% endif %}
+<p><a href="/">Go back home</a></p>
+
+{% endblock %}

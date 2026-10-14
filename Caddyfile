@@ -1,0 +1,13 @@
+# This assumes Caddy is already installed and running on the VPS itself (outside
+# Docker). Add this block to the VPS's existing Caddyfile (commonly
+# /etc/caddy/Caddyfile), then:
+#   sudo systemctl reload caddy
+#
+# If Caddy is actually meant to run in its own container instead, this needs to
+# change: it would join the same Docker network as the app service and proxy to
+# `application-review-site:6559` (the compose service name) rather than `127.0.0.1:6559` — worth
+# confirming which setup you actually have before deploying.
+
+example.com {
+    reverse_proxy 127.0.0.1:6559
+}

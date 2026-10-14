@@ -1,0 +1,14 @@
+# Keep host-specific and secret files out of the image. Without this, `COPY . .`
+# would overwrite the container's Linux node_modules with the host's, bake .env
+# (secrets) into an image layer, and copy the local database in too. Mirrors
+# .gitignore: any .env variant, and a SQLite database wherever it is.
+node_modules
+dist
+data
+.env*
+**/*.db
+**/*.db-*
+**/*.sqlite
+**/*.sqlite3
+.git
+*.log

@@ -1,0 +1,144 @@
+{% macro companyTags(company, attributes) %}
+  {% for attr in attributes %}
+    {% if company[attr.key] == true %}<span class="tag tag-yes">{{ attr.label }}</span>{% endif %}
+  {% endfor %}
+{% endmacro %}
+
+{# An ⓘ that shows text too long to put inline. It's focusable, so the text shows
+   on hover, on keyboard focus, and on tap (touch screens focus what's tapped),
+   and screen readers read it out — unlike a plain title="" tooltip. #}
+{% macro infoTip(text) %}<span class="info-tip" tabindex="0" role="img" aria-label="{{ text }}" data-tip="{{ text }}">ⓘ</span>{% endmacro %}
+
+{% macro attributeValue(value) %}{% if value == true %}Yes{% elif value == false %}No{% else %}Unknown{% endif %}{% endmacro %}
+
+{# A review report as shown on a company (search result or detail page): a count, never who reported it. #}
+{% macro reportSummary(report) %}{{ report.label }}: reported by {{ report.count }} {{ "person" if report.count == 1 else "people" }}{% endmacro %}
+
+{#
+  The review form's rating: five stars, pickable in half stars. Really ten radio
+  buttons (values 1–10, half-star units, as stored), each label drawn as half a
+  star; pure CSS (see .star-rating in styles.css), so arrow keys and screen
+  readers work as for any radio group. In ascending order, so → raises the rating.
+  Rating is optional, and a chosen radio button can't be unticked, so "No rating"
+  is one more option in the group (submitting an empty value).
+#}
+{% macro starRatingInput(selected) %}
+  <fieldset class="star-rating">
+    <legend>Rating (optional)</legend>
+    <div class="stars">
+      {% for i in range(1, 11) %}
+        {% set stars = (i / 2) ~ (" star" if i == 2 else " stars") %}
+        <input type="radio" id="rating-{{ i }}" name="rating" value="{{ i }}" {% if selected == i %}checked{% endif %}>
+        <label for="rating-{{ i }}" class="half {{ 'left' if i % 2 else 'right' }}" title="{{ stars }}"><span class="visually-hidden">{{ stars }}</span></label>
+      {% endfor %}
+    </div>
+    <label class="checkbox-label">
+      <input type="radio" name="rating" value="" {% if not selected %}checked{% endif %}>
+      No rating
+    </label>
+  </fieldset>
+{% endmacro %}
+
+{# A review's own rating, or a note that it has none. #}
+{% macro reviewRating(rating) %}
+  {%- if rating %}{{ rating / 2 }} / 5{% else %}No rating{% endif -%}
+{% endmacro %}
+
+{# A company's average rating, over the reviews that gave one — none for viewers who can't see reviews (see loadCompanyMeta). #}
+{% macro averageRating(meta) %}
+  {% if meta.ratingCount > 0 %}
+    <p class="rating">{{ meta.avgRating | round(1) }} / 5 ({{ meta.ratingCount }} rating{{ "s" if meta.ratingCount != 1 }})</p>
+  {% endif %}
+{% endmacro %}
+
+{# On the review forms: who will be able to read the review (reviewsConfig in src/config/company-attributes.ts). #}
+{% macro reviewVisibilityNote(visibility) %}
+  <p class="note">
+    {%- if visibility == 'public' %}Your review will be public, but only signed-in members can see your display name.
+    {%- elif visibility == 'user' %}Only signed-in members can see your review.
+    {%- else %}Only admins can see your review.{% endif -%}
+  </p>
+{% endmacro %}
+
+{# The report checkboxes on the review form — shared by the add form (company page) and the edit form. #}
+{% macro reviewReportFields(reports, review) %}
+  <p class="note">Applies if it's been more than 10 days (excluding auto-confirmations).</p>
+  {% for report in reports %}
+    <label class="checkbox-label">
+      <input type="checkbox" name="{{ report.key }}" value="true" {% if review and review[report.key] %}checked{% endif %}>
+      {{ report.label }}
+    </label>
+  {% endfor %}
+{% endmacro %}
+
+{# A company's countries, grouped by region (see groupCountriesByRegion in src/lib/regions.ts). #}
+{% macro countryGroups(groups) %}
+  <ul class="country-groups">
+    {% for group in groups %}
+      <li>
+        <strong>{{ group.name }}</strong>
+        {%- if group.whole %} <span class="note">(all)</span>{% endif %}
+        {%- if group.countries.length %}: {{ group.countries | join(", ") }}{% endif %}
+        {% if group.children.length %}{{ countryGroups(group.children) }}{% endif %}
+      </li>
+    {% endfor %}
+  </ul>
+{% endmacro %}
+
+{#
+  Renders the region/country tree as checkboxes. Each region's "select all"
+  only ticks its countries, and becomes "deselect all" once they're all ticked
+  (see public/app.js) — nothing is applied until the form is submitted, so
+  other choices on the page are kept.
+#}
+{% macro regionPicker(node, selectedCountries, fieldName, ancestorPath='', depth=0) %}
+  {% set path = (ancestorPath + ',' + node.id|string) if ancestorPath else node.id|string %}
+  <div class="region-node" style="margin-left: {{ depth * 16 }}px;">
+    <div class="region-name">
+      <strong>{{ node.name }}</strong>
+      {% if node.countries.length or node.children.length %}
+        <button type="button" class="region-quick-link" data-select-region="{{ path }}">select all</button>
+      {% endif %}
+    </div>
+    {% if node.countries.length %}
+      <div class="country-list">
+        {% for c in node.countries %}
+          <label class="checkbox-label">
+            <input type="checkbox" name="{{ fieldName }}" value="{{ c.code }}" data-region-path="{{ path }}" {% if c.code in selectedCountries %}checked{% endif %}>
+            {{ c.name }}
+          </label>
+        {% endfor %}
+      </div>
+    {% endif %}
+    {% for child in node.children %}
+      {{ regionPicker(child, selectedCountries, fieldName, path, depth + 1) }}
+    {% endfor %}
+  </div>
+{% endmacro %}
+
+{#
+  The whole region/country tree under one heading, collapsed by default since
+  it's long. Collapsing only hides the checkboxes — they stay in the form and
+  are still submitted, so the selection never changes. The heading shows how
+  many are ticked, and the open/closed state survives page reloads (both in
+  public/app.js).
+#}
+{% macro regionTreePicker(regionTree, selectedCountries, fieldName, heading, note) %}
+  <details class="region-tree" data-field="{{ fieldName }}">
+    <summary><h3>{{ heading }}</h3> <span class="note" data-selected-count></span></summary>
+    <p class="note">{{ note }}</p>
+    {% for node in regionTree %}
+      {{ regionPicker(node, selectedCountries, fieldName) }}
+    {% endfor %}
+  </details>
+{% endmacro %}
+
+{% macro pagination(page, totalPages, query) %}
+  {% if totalPages > 1 %}
+    <nav class="pagination">
+      {% if page > 1 %}<a href="?{{ query | urlWithPage(page - 1) }}">&laquo; Previous</a>{% endif %}
+      <span>Page {{ page }} of {{ totalPages }}</span>
+      {% if page < totalPages %}<a href="?{{ query | urlWithPage(page + 1) }}">Next &raquo;</a>{% endif %}
+    </nav>
+  {% endif %}
+{% endmacro %}

@@ -1,0 +1,20 @@
+{% extends "base.njk" %}
+{% import "_macros.njk" as m %}
+{% block title %}My reviews — {{ siteName }}{% endblock %}
+{% block content %}
+
+<h1>My reviews</h1>
+
+{% if rows.length == 0 %}
+  <p>You haven't reviewed any companies yet.</p>
+{% endif %}
+
+{% for row in rows %}
+  <div class="card">
+    <a href="/companies/{{ row.company.id }}">{{ row.company.name }}</a>
+    — {{ m.reviewRating(row.review.rating) }}
+    <a href="/companies/{{ row.company.id }}/reviews/{{ row.review.id }}/edit">Edit</a>
+  </div>
+{% endfor %}
+
+{% endblock %}

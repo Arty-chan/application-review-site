@@ -1,0 +1,16 @@
+{% extends "base.njk" %}
+{% block title %}Invite a user — {{ siteName }}{% endblock %}
+{% block content %}
+  <div class="card" style="max-width: 360px;">
+    <h1>Invite a user</h1>
+    {% if message %}<p>{{ message }}</p>{% endif %}
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post" action="/invites">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <label>Email
+        <input class="input" type="email" name="email" required autofocus>
+      </label>
+      <button class="btn" type="submit">Send invite</button>
+    </form>
+  </div>
+{% endblock %}

@@ -1,0 +1,134 @@
+{% extends "base.njk" %}
+{% import "_macros.njk" as m %}
+{% block title %}{{ company.name }} — {{ siteName }}{% endblock %}
+{% block content %}
+
+<div class="title-row">
+  <h1>{{ company.name }}</h1>
+  {% if isAuthed %}
+    <form method="post" action="/companies/{{ company.id }}/favorite{{ '/delete' if isFavorite }}">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <button class="btn btn-secondary" type="submit">{{ "★ Unfavorite" if isFavorite else "☆ Favorite" }}</button>
+    </form>
+  {% endif %}
+</div>
+<p>
+  <a href="{{ company.websiteUrl }}" target="_blank" rel="noopener">Website</a>
+  {% if company.careersUrl %} &middot; <a href="{{ company.careersUrl }}" target="_blank" rel="noopener">Careers page</a>{% endif %}
+</p>
+
+{{ m.averageRating(meta) }}
+
+<div class="tags">
+  {% if company.employeeSizeRange %}<span class="tag">{{ company.employeeSizeRange }} employees</span>{% endif %}
+  {% for i in meta.industries %}<span class="tag">{{ i.name }}</span>{% endfor %}
+</div>
+
+<h3>Hires in</h3>
+{% if countryGroups.length %}
+  {% if hiresAnywhere %}<p>Anywhere — every country:</p>{% endif %}
+  {{ m.countryGroups(countryGroups) }}
+{% else %}
+  <p class="note">Not known yet.</p>
+{% endif %}
+
+<h3>Hiring process</h3>
+<ul>
+  {% for attr in visibleAttrs %}
+    <li>{{ attr.label }}{% if attr.helpText %} {{ m.infoTip(attr.helpText) }}{% endif %}: {{ m.attributeValue(attr.value) }}</li>
+  {% endfor %}
+  {% for report in meta.reports %}
+    <li>{{ m.reportSummary(report) }}</li>
+  {% endfor %}
+</ul>
+
+{% if isAuthed and company.generalNotes %}
+  <h3>Notes</h3>
+  <p class="review-body">{{ company.generalNotes }}</p>
+{% endif %}
+
+<p class="note">
+  Last updated {{ company.updatedAt | isoDate }}
+  {% if isAuthed and updatedByUser %}by {{ updatedByUser.displayName }}{% endif %}
+</p>
+
+{% if isAuthed %}
+  <div class="actions">
+    <a href="/companies/{{ company.id }}/edit" class="btn btn-secondary">Edit company</a>
+    {% if currentUser.role == 'admin' %}
+      <form method="post" action="/companies/{{ company.id }}/delete" class="inline-form" data-confirm="Delete this company and all its reviews?">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+        <button class="btn btn-secondary" type="submit">Delete company</button>
+      </form>
+    {% endif %}
+  </div>
+{% endif %}
+
+{% if isAuthed or canSeeReviews %}
+  <h2>Reviews</h2>
+{% endif %}
+
+{% if isAuthed and not myReview %}
+  <form method="post" action="/companies/{{ company.id }}/reviews" class="card">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    {{ m.reviewVisibilityNote(reviewVisibility) }}
+    {{ m.starRatingInput() }}
+    <label>When did you go through this process?
+      <input class="input" type="date" name="jobProcessDate" value="{{ today }}">
+    </label>
+    <label>Comment
+      <textarea class="input" name="comment" required rows="4"></textarea>
+    </label>
+    {{ m.reviewReportFields(reviewReports) }}
+    <button class="btn" type="submit">Submit review</button>
+  </form>
+{% endif %}
+
+{% if canSeeReviews %}
+  {% for review in reviews %}
+    <div class="card">
+      <p>
+        <strong>{{ m.reviewRating(review.rating) }}</strong> — {{ review.authorName }}
+        <span class="note">(process: {{ review.jobProcessDate | isoDate }}, posted {{ review.createdAt | isoDate }}{% if review.editedAt %}, edited{% endif %})</span>
+      </p>
+      <p class="review-body">{{ review.comment }}</p>
+      <div class="tags">
+        {% for report in visibleReports %}{% if review[report.key] %}<span class="tag tag-yes">{{ report.label }}</span>{% endif %}{% endfor %}
+      </div>
+      {# Your own review (or any, for an admin) can be changed; anyone else's can be flagged. #}
+      {% if isAuthed %}
+        <div class="actions">
+          {% if review.userId == currentUser.id or currentUser.role == 'admin' %}
+            <a href="/companies/{{ company.id }}/reviews/{{ review.id }}/edit">Edit</a>
+            <form method="post" action="/companies/{{ company.id }}/reviews/{{ review.id }}/delete" class="inline-form" data-confirm="Delete this review?">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+              <button class="btn-link" type="submit">Delete</button>
+            </form>
+          {% else %}
+            <details>
+              <summary>Flag</summary>
+              <form method="post" action="/reviews/{{ review.id }}/flag">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                <label>What's wrong with this review?
+                  <input class="input" type="text" name="comment" required>
+                </label>
+                <button class="btn btn-secondary" type="submit">Submit flag</button>
+              </form>
+            </details>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  {% else %}
+    <p class="note">No reviews yet.</p>
+  {% endfor %}
+{% endif %}
+
+{% if not isAuthed %}
+  <p>
+    <a href="/login">Log in</a>
+    {% if canSeeReviews %}to write a review and see more details, like reviewers' names.{% else %}to see ratings, reviews, and more details.{% endif %}
+  </p>
+{% endif %}
+
+{% endblock %}

@@ -1,0 +1,17 @@
+{% extends "base.njk" %}
+{% block title %}Favorites — {{ siteName }}{% endblock %}
+{% block content %}
+
+<h1>Favorites</h1>
+
+{% if companies.length == 0 %}
+  <p>You haven't favorited any companies yet.</p>
+{% endif %}
+
+{% for company in companies %}
+  <div class="card">
+    <a href="/companies/{{ company.id }}">{{ company.name }}</a>
+  </div>
+{% endfor %}
+
+{% endblock %}

@@ -1,0 +1,22 @@
+node_modules/
+dist/
+
+# Real environment config — never commit it. Covers variants like .env.production
+# too; .env.example is the template that stays in the repo.
+.env*
+!.env.example
+
+# The database — never commit real data. data/ is where it lives by default (and
+# where Docker mounts it), so the whole folder is ignored: the database, its
+# WAL/journal files, backups, and Litestream's replication files. The leading
+# slash limits this to the top-level data/ — without it, scripts/data/ (the seed
+# files, which must be committed) would be ignored too. The patterns after it
+# catch a SQLite database put anywhere else (and Windows' Thumbs.db).
+/data/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+
+*.log
+.DS_Store

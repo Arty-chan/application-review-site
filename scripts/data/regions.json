@@ -1,0 +1,282 @@
+[
+  {
+    "name": "AMER",
+    "children": [
+      {
+        "name": "North America",
+        "countries": [
+          { "code": "US", "name": "United States" },
+          { "code": "CA", "name": "Canada" },
+          { "code": "MX", "name": "Mexico" }
+        ]
+      },
+      {
+        "name": "Central America",
+        "countries": [
+          { "code": "GT", "name": "Guatemala" },
+          { "code": "BZ", "name": "Belize" },
+          { "code": "HN", "name": "Honduras" },
+          { "code": "SV", "name": "El Salvador" },
+          { "code": "NI", "name": "Nicaragua" },
+          { "code": "CR", "name": "Costa Rica" },
+          { "code": "PA", "name": "Panama" }
+        ]
+      },
+      {
+        "name": "Caribbean",
+        "countries": [
+          { "code": "AG", "name": "Antigua and Barbuda" },
+          { "code": "BS", "name": "Bahamas" },
+          { "code": "BB", "name": "Barbados" },
+          { "code": "CU", "name": "Cuba" },
+          { "code": "DM", "name": "Dominica" },
+          { "code": "DO", "name": "Dominican Republic" },
+          { "code": "GD", "name": "Grenada" },
+          { "code": "HT", "name": "Haiti" },
+          { "code": "JM", "name": "Jamaica" },
+          { "code": "KN", "name": "Saint Kitts and Nevis" },
+          { "code": "LC", "name": "Saint Lucia" },
+          { "code": "VC", "name": "Saint Vincent and the Grenadines" },
+          { "code": "TT", "name": "Trinidad and Tobago" }
+        ]
+      },
+      {
+        "name": "South America",
+        "countries": [
+          { "code": "BR", "name": "Brazil" },
+          { "code": "AR", "name": "Argentina" },
+          { "code": "CL", "name": "Chile" },
+          { "code": "CO", "name": "Colombia" },
+          { "code": "PE", "name": "Peru" },
+          { "code": "EC", "name": "Ecuador" },
+          { "code": "UY", "name": "Uruguay" },
+          { "code": "PY", "name": "Paraguay" },
+          { "code": "BO", "name": "Bolivia" },
+          { "code": "VE", "name": "Venezuela" },
+          { "code": "GY", "name": "Guyana" },
+          { "code": "SR", "name": "Suriname" }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "EMEA",
+    "children": [
+      {
+        "name": "Europe",
+        "children": [
+          {
+            "name": "EU",
+            "countries": [
+              { "code": "DE", "name": "Germany" },
+              { "code": "FR", "name": "France" },
+              { "code": "IT", "name": "Italy" },
+              { "code": "ES", "name": "Spain" },
+              { "code": "NL", "name": "Netherlands" },
+              { "code": "BE", "name": "Belgium" },
+              { "code": "PL", "name": "Poland" },
+              { "code": "SE", "name": "Sweden" },
+              { "code": "AT", "name": "Austria" },
+              { "code": "IE", "name": "Ireland" },
+              { "code": "PT", "name": "Portugal" },
+              { "code": "DK", "name": "Denmark" },
+              { "code": "FI", "name": "Finland" },
+              { "code": "GR", "name": "Greece" },
+              { "code": "CZ", "name": "Czechia" },
+              { "code": "RO", "name": "Romania" },
+              { "code": "HU", "name": "Hungary" },
+              { "code": "BG", "name": "Bulgaria" },
+              { "code": "HR", "name": "Croatia" },
+              { "code": "CY", "name": "Cyprus" },
+              { "code": "EE", "name": "Estonia" },
+              { "code": "LV", "name": "Latvia" },
+              { "code": "LT", "name": "Lithuania" },
+              { "code": "LU", "name": "Luxembourg" },
+              { "code": "MT", "name": "Malta" },
+              { "code": "SK", "name": "Slovakia" },
+              { "code": "SI", "name": "Slovenia" }
+            ]
+          },
+          {
+            "name": "Non-EU Europe",
+            "countries": [
+              { "code": "GB", "name": "United Kingdom" },
+              { "code": "CH", "name": "Switzerland" },
+              { "code": "NO", "name": "Norway" },
+              { "code": "IS", "name": "Iceland" },
+              { "code": "AL", "name": "Albania" },
+              { "code": "AD", "name": "Andorra" },
+              { "code": "BY", "name": "Belarus" },
+              { "code": "BA", "name": "Bosnia and Herzegovina" },
+              { "code": "LI", "name": "Liechtenstein" },
+              { "code": "MD", "name": "Moldova" },
+              { "code": "MC", "name": "Monaco" },
+              { "code": "ME", "name": "Montenegro" },
+              { "code": "MK", "name": "North Macedonia" },
+              { "code": "RU", "name": "Russia" },
+              { "code": "SM", "name": "San Marino" },
+              { "code": "RS", "name": "Serbia" },
+              { "code": "UA", "name": "Ukraine" },
+              { "code": "AM", "name": "Armenia" },
+              { "code": "AZ", "name": "Azerbaijan" },
+              { "code": "GE", "name": "Georgia" }
+            ]
+          }
+        ]
+      },
+      {
+        "name": "Middle East",
+        "countries": [
+          { "code": "AE", "name": "United Arab Emirates" },
+          { "code": "IL", "name": "Israel" },
+          { "code": "SA", "name": "Saudi Arabia" },
+          { "code": "TR", "name": "Turkey" },
+          { "code": "QA", "name": "Qatar" },
+          { "code": "BH", "name": "Bahrain" },
+          { "code": "IR", "name": "Iran" },
+          { "code": "IQ", "name": "Iraq" },
+          { "code": "JO", "name": "Jordan" },
+          { "code": "KW", "name": "Kuwait" },
+          { "code": "LB", "name": "Lebanon" },
+          { "code": "OM", "name": "Oman" },
+          { "code": "SY", "name": "Syria" },
+          { "code": "YE", "name": "Yemen" }
+        ]
+      },
+      {
+        "name": "Africa",
+        "countries": [
+          { "code": "ZA", "name": "South Africa" },
+          { "code": "NG", "name": "Nigeria" },
+          { "code": "KE", "name": "Kenya" },
+          { "code": "EG", "name": "Egypt" },
+          { "code": "MA", "name": "Morocco" },
+          { "code": "DZ", "name": "Algeria" },
+          { "code": "AO", "name": "Angola" },
+          { "code": "BJ", "name": "Benin" },
+          { "code": "BW", "name": "Botswana" },
+          { "code": "BF", "name": "Burkina Faso" },
+          { "code": "BI", "name": "Burundi" },
+          { "code": "CV", "name": "Cabo Verde" },
+          { "code": "CM", "name": "Cameroon" },
+          { "code": "CF", "name": "Central African Republic" },
+          { "code": "TD", "name": "Chad" },
+          { "code": "KM", "name": "Comoros" },
+          { "code": "CG", "name": "Republic of the Congo" },
+          { "code": "CD", "name": "Democratic Republic of the Congo" },
+          { "code": "CI", "name": "Côte d'Ivoire" },
+          { "code": "DJ", "name": "Djibouti" },
+          { "code": "GQ", "name": "Equatorial Guinea" },
+          { "code": "ER", "name": "Eritrea" },
+          { "code": "SZ", "name": "Eswatini" },
+          { "code": "ET", "name": "Ethiopia" },
+          { "code": "GA", "name": "Gabon" },
+          { "code": "GM", "name": "Gambia" },
+          { "code": "GH", "name": "Ghana" },
+          { "code": "GN", "name": "Guinea" },
+          { "code": "GW", "name": "Guinea-Bissau" },
+          { "code": "LS", "name": "Lesotho" },
+          { "code": "LR", "name": "Liberia" },
+          { "code": "LY", "name": "Libya" },
+          { "code": "MG", "name": "Madagascar" },
+          { "code": "MW", "name": "Malawi" },
+          { "code": "ML", "name": "Mali" },
+          { "code": "MR", "name": "Mauritania" },
+          { "code": "MU", "name": "Mauritius" },
+          { "code": "MZ", "name": "Mozambique" },
+          { "code": "NA", "name": "Namibia" },
+          { "code": "NE", "name": "Niger" },
+          { "code": "RW", "name": "Rwanda" },
+          { "code": "ST", "name": "São Tomé and Príncipe" },
+          { "code": "SN", "name": "Senegal" },
+          { "code": "SC", "name": "Seychelles" },
+          { "code": "SL", "name": "Sierra Leone" },
+          { "code": "SO", "name": "Somalia" },
+          { "code": "SS", "name": "South Sudan" },
+          { "code": "SD", "name": "Sudan" },
+          { "code": "TZ", "name": "Tanzania" },
+          { "code": "TG", "name": "Togo" },
+          { "code": "TN", "name": "Tunisia" },
+          { "code": "UG", "name": "Uganda" },
+          { "code": "ZM", "name": "Zambia" },
+          { "code": "ZW", "name": "Zimbabwe" }
+        ]
+      }
+    ]
+  },
+  {
+    "name": "APAC",
+    "children": [
+      {
+        "name": "East Asia",
+        "countries": [
+          { "code": "JP", "name": "Japan" },
+          { "code": "KR", "name": "South Korea" },
+          { "code": "CN", "name": "China" },
+          { "code": "TW", "name": "Taiwan" },
+          { "code": "HK", "name": "Hong Kong" },
+          { "code": "MN", "name": "Mongolia" },
+          { "code": "KP", "name": "North Korea" }
+        ]
+      },
+      {
+        "name": "South Asia",
+        "countries": [
+          { "code": "IN", "name": "India" },
+          { "code": "PK", "name": "Pakistan" },
+          { "code": "BD", "name": "Bangladesh" },
+          { "code": "AF", "name": "Afghanistan" },
+          { "code": "BT", "name": "Bhutan" },
+          { "code": "MV", "name": "Maldives" },
+          { "code": "NP", "name": "Nepal" },
+          { "code": "LK", "name": "Sri Lanka" }
+        ]
+      },
+      {
+        "name": "Central Asia",
+        "countries": [
+          { "code": "KZ", "name": "Kazakhstan" },
+          { "code": "KG", "name": "Kyrgyzstan" },
+          { "code": "TJ", "name": "Tajikistan" },
+          { "code": "TM", "name": "Turkmenistan" },
+          { "code": "UZ", "name": "Uzbekistan" }
+        ]
+      },
+      {
+        "name": "Southeast Asia",
+        "countries": [
+          { "code": "SG", "name": "Singapore" },
+          { "code": "ID", "name": "Indonesia" },
+          { "code": "PH", "name": "Philippines" },
+          { "code": "VN", "name": "Vietnam" },
+          { "code": "TH", "name": "Thailand" },
+          { "code": "MY", "name": "Malaysia" },
+          { "code": "BN", "name": "Brunei" },
+          { "code": "KH", "name": "Cambodia" },
+          { "code": "LA", "name": "Laos" },
+          { "code": "MM", "name": "Myanmar" },
+          { "code": "TL", "name": "Timor-Leste" }
+        ]
+      },
+      {
+        "name": "Oceania",
+        "countries": [
+          { "code": "AU", "name": "Australia" },
+          { "code": "NZ", "name": "New Zealand" },
+          { "code": "FJ", "name": "Fiji" },
+          { "code": "KI", "name": "Kiribati" },
+          { "code": "MH", "name": "Marshall Islands" },
+          { "code": "FM", "name": "Micronesia" },
+          { "code": "NR", "name": "Nauru" },
+          { "code": "PW", "name": "Palau" },
+          { "code": "PG", "name": "Papua New Guinea" },
+          { "code": "WS", "name": "Samoa" },
+          { "code": "SB", "name": "Solomon Islands" },
+          { "code": "TO", "name": "Tonga" },
+          { "code": "TV", "name": "Tuvalu" },
+          { "code": "VU", "name": "Vanuatu" }
+        ]
+      }
+    ]
+  }
+]

@@ -1,0 +1,14 @@
+services:
+  application-review-site:
+    build: .
+    restart: unless-stopped
+    env_file: .env
+    volumes:
+      # Named bind mount, not a Docker volume — keeps the SQLite file at a known
+      # path on the host, so backups/Litestream can get at it directly.
+      - ./data:/app/data
+    ports:
+      # Bound to localhost only — not exposed to the internet directly. The VPS's
+      # own Caddy (installed on the host, not in this compose file) reverse-proxies
+      # to this port. See Caddyfile.
+      - "127.0.0.1:6559:6559"

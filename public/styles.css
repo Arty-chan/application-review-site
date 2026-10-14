@@ -1,0 +1,489 @@
+:root {
+  --color-text: #1a1a1a;
+  --color-muted: #6b6b6b;
+  --color-border: #e2e2e2;
+  --color-accent: #2f6f4f;
+  --color-star: #e0a800;
+  --color-bg: #ffffff;
+  --space-sm: 0.5rem;
+  --space-md: 1rem;
+  --space-lg: 2rem;
+  --radius: 6px;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  font-family: system-ui, -apple-system, sans-serif;
+  color: var(--color-text);
+  background: var(--color-bg);
+  margin: 0;
+  line-height: 1.5;
+}
+
+a {
+  color: var(--color-accent);
+}
+
+/* Full-width, fluid pages: side padding grows with the window (1rem on phones,
+   up to 3rem on wide screens) rather than capping the content at a fixed width. */
+.container {
+  padding: var(--space-lg) clamp(var(--space-md), 4vw, 3rem);
+}
+
+/* Reusable component classes — extend as real pages get built, rather than
+   reaching for a utility framework like Tailwind, which would need a build step. */
+
+.card {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  padding: var(--space-md);
+  margin-bottom: var(--space-md);
+}
+
+/* Browsers give buttons and form fields their own font instead of the page's,
+   so a link styled as a button wouldn't match a real one beside it. */
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+/* Every button gets some room above and below by default. The few that sit
+   inline with text (or in the nav bar) opt out in their own rules. Button text
+   is a single line, so it doesn't need the body's paragraph line spacing. */
+button,
+.btn {
+  margin: var(--space-sm) 0;
+  line-height: 1.25;
+}
+
+.btn {
+  display: inline-block;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius);
+  border: 1px solid var(--color-accent);
+  background: var(--color-accent);
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 1rem;
+}
+
+.btn.btn-secondary {
+  background: transparent;
+  color: var(--color-accent);
+}
+
+.input,
+select,
+textarea {
+  width: 100%;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius);
+  font-size: 1rem;
+}
+
+.tag {
+  display: inline-block;
+  font-size: 0.85rem;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: #f0f0f0;
+  color: var(--color-muted);
+}
+
+/* A row of tags, evenly spaced, wrapping onto more lines as needed. Rows that
+   follow one another (e.g. locations, then attributes) get the same space
+   between them. A row that turned out empty takes up no space at all. */
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem var(--space-sm);
+}
+
+.tags:not(:has(.tag)) {
+  display: none;
+}
+
+.tags + .tags:has(.tag) {
+  margin-top: 0.35rem;
+}
+
+.tag-yes {
+  background: #e6f2ea;
+  color: var(--color-accent);
+}
+
+.navbar {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-sm) var(--space-lg);
+  padding-top: var(--space-md);
+  padding-bottom: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* The links on the right: evenly spaced, wrapping onto a new line on narrow screens. */
+.nav-links {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm) var(--space-md);
+}
+
+.nav-links a {
+  text-decoration: none;
+}
+
+.nav-links a:hover {
+  text-decoration: underline;
+}
+
+.nav-links .btn {
+  margin: 0; /* the nav's own gap spaces it */
+}
+
+/* A compact button, so Log out sits in the nav bar like the links around it. */
+.nav-links .btn {
+  padding: 0.25rem 0.75rem;
+}
+
+.inline-form {
+  display: inline;
+}
+
+/* Hidden on screen but still read by screen readers. */
+.visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  white-space: nowrap;
+}
+
+/* The five-star rating input — see starRatingInput in _macros.njk. Each label is
+   half of a 1.2em-wide star box showing one side of a ★. Once one is chosen,
+   every half star lights up except those after the chosen one. */
+.star-rating {
+  border: 0;
+  padding: 0;
+  margin: 0 0 var(--space-md);
+}
+
+.star-rating legend {
+  padding: 0;
+  font-size: 0.9rem;
+}
+
+.star-rating .stars {
+  display: inline-flex;
+  font-size: 2rem;
+  line-height: 1;
+}
+
+.star-rating .stars input {
+  position: absolute;
+  opacity: 0;
+  width: 1px;
+  height: 1px;
+}
+
+.star-rating .half {
+  width: 0.6em;
+  overflow: hidden;
+  margin: 0;
+  font-size: inherit;
+  color: var(--color-border);
+  cursor: pointer;
+}
+
+.star-rating .half::before {
+  content: '★';
+  display: inline-block;
+  width: 1.2em;
+  text-align: center;
+}
+
+.star-rating .right::before {
+  margin-left: -0.6em;
+}
+
+/* Not hovering: show the chosen rating — every half star lit up to the checked one. */
+.star-rating .stars:not(:hover):has(input:checked) .half {
+  color: var(--color-star);
+}
+
+.star-rating .stars:not(:hover) input:checked + .half ~ .half {
+  color: var(--color-border);
+}
+
+/* Hovering: preview a choice the same way, up to the half star under the pointer. */
+.star-rating .stars:hover .half {
+  color: var(--color-star);
+}
+
+.star-rating .stars .half:hover ~ .half {
+  color: var(--color-border);
+}
+
+.star-rating input:focus-visible + label {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* "No rating", on its own line under the stars. The fieldset already leaves
+   room below it, so the label doesn't add its own. */
+.star-rating .checkbox-label {
+  margin: var(--space-sm) 0 0;
+}
+
+/* A page title with a control beside it (e.g. a company's favorite toggle). */
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0 var(--space-md);
+  /* The row takes the heading's usual spacing. Margins inside a flex row don't
+     overlap with the content after it, so the heading's own would add to it. */
+  margin: 1.34rem 0; /* = an h1's default 0.67em at its 2em size */
+}
+
+.title-row h1,
+.title-row .btn {
+  margin: 0;
+}
+
+/* A company's countries grouped by region: nested, without bullets. */
+.country-groups {
+  list-style: none;
+  margin: 0 0 var(--space-md);
+  padding-left: 0;
+}
+
+.country-groups .country-groups {
+  margin-bottom: 0;
+  padding-left: var(--space-md);
+}
+
+/* A row of buttons/links acting on the thing above them (e.g. Edit, Favorite,
+   Delete): one line with even gaps, wrapping on narrow screens. */
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin: var(--space-md) 0;
+}
+
+/* A Flag toggle in an actions row: opened, its form takes the full width. */
+.actions details[open] {
+  flex-basis: 100%;
+}
+
+.error {
+  color: #b3261e;
+}
+
+label {
+  display: block;
+  margin-bottom: var(--space-md);
+  font-size: 0.9rem;
+}
+
+.search-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: var(--space-lg);
+  align-items: start;
+}
+
+.filters h3 {
+  margin-top: var(--space-md);
+  margin-bottom: var(--space-sm);
+  font-size: 0.95rem;
+}
+
+.filters .note {
+  font-size: 0.8rem;
+  color: var(--color-muted);
+  margin: 0 0 var(--space-sm);
+}
+
+/* The collapsible region/country tree — see regionTreePicker in _macros.njk.
+   The heading sits inline beside the expand/collapse arrow. */
+.region-tree > summary {
+  cursor: pointer;
+  margin: var(--space-md) 0 var(--space-sm);
+}
+
+.region-tree > summary h3 {
+  display: inline;
+}
+
+.region-node {
+  margin-bottom: 4px;
+}
+
+.region-name {
+  font-size: 0.9rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.region-quick-link {
+  font-size: 0.75rem;
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  cursor: pointer;
+  padding: 0;
+  margin: 0; /* sits inline beside the region name */
+  text-decoration: underline;
+}
+
+.country-list {
+  margin-left: 12px;
+}
+
+/* A checkbox is a field like any other — the same space after it as any label
+   (see `label`) — except inside a list of them, where they sit close together:
+   any checkbox followed by another, and every country in the region picker. */
+.checkbox-label {
+  display: block;
+  font-weight: normal;
+  font-size: 0.85rem;
+}
+
+.checkbox-label:has(+ .checkbox-label),
+.country-list .checkbox-label {
+  margin-bottom: 2px;
+}
+
+.checkbox-label input {
+  margin-right: 6px;
+}
+
+/* "Sort by" above the search results: label and dropdowns on one line. */
+.sort-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-md);
+}
+
+.sort-bar label {
+  margin: 0;
+}
+
+.sort-bar select {
+  width: auto;
+}
+
+.company-card h2 {
+  margin: 0 0 var(--space-sm);
+  font-size: 1.1rem;
+}
+
+.rating {
+  font-weight: 600;
+  margin: 0 0 var(--space-sm);
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: var(--space-lg);
+}
+
+.btn-link {
+  background: none;
+  border: none;
+  color: var(--color-accent);
+  text-decoration: underline;
+  cursor: pointer;
+  padding: 0;
+  margin: 0; /* a button styled as a link, so it sits inline like one */
+  font-size: 1rem;
+}
+
+.note {
+  font-size: 0.85rem;
+  color: var(--color-muted);
+}
+
+/* See infoTip in _macros.njk. */
+.info-tip {
+  position: relative;
+  color: var(--color-muted);
+  cursor: help;
+}
+
+.info-tip:hover::after,
+.info-tip:focus::after {
+  content: attr(data-tip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 4px;
+  width: max-content;
+  max-width: 240px;
+  padding: var(--space-sm);
+  border-radius: var(--radius);
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: 0.8rem;
+  line-height: 1.3;
+  z-index: 1;
+}
+
+hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: var(--space-sm) 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: var(--space-md);
+}
+
+th,
+td {
+  text-align: left;
+  vertical-align: top;
+  padding: var(--space-sm);
+  border-bottom: 1px solid var(--color-border);
+}
+
+/* Scrolls sideways within itself rather than widening the page (long CSV rows). */
+pre {
+  overflow-x: auto;
+  padding: var(--space-sm);
+  background: #f6f6f6;
+  border-radius: var(--radius);
+}
+
+@media (max-width: 700px) {
+  .search-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Reviews are stored with newlines but no HTML — render them literally rather
+   than converting to <br>: building HTML from user input is how XSS gets in. */
+.review-body {
+  white-space: pre-wrap;
+}

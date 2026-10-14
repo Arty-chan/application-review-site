@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{% block title %}{{ siteName }}{% endblock %}</title>
+  <link rel="stylesheet" href="/styles.css" />
+  <script src="/app.js" defer></script>
+</head>
+<body>
+  <nav class="container navbar">
+    <a href="/"><strong>{{ siteName }}</strong></a>
+    <div class="nav-links">
+      {% if currentUser %}
+        <a href="/companies/new">Add company</a>
+        <a href="/account/favorites">Favorites</a>
+        <a href="/account/reviews">My reviews</a>
+        <a href="/invites">Invite</a>
+        {% if currentUser.role == 'admin' %}<a href="/admin/users/new">Add user</a> <a href="/admin/flags">Flags</a> <a href="/admin/import">Import</a>{% endif %}
+        <a href="/users/{{ currentUser.id }}" class="tag">{{ currentUser.displayName or currentUser.email }}</a>
+        <form method="post" action="/logout" class="inline-form">
+          <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+          <button class="btn btn-secondary" type="submit">Log out</button>
+        </form>
+      {% else %}
+        <a href="/login">Log in</a>
+      {% endif %}
+    </div>
+  </nav>
+  <main class="container">
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>

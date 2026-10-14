@@ -1,0 +1,19 @@
+{% extends "base.njk" %}
+{% block title %}Log in — {{ siteName }}{% endblock %}
+{% block content %}
+  <div class="card" style="max-width: 360px;">
+    <h1>Log in</h1>
+    {% if error %}<p class="error">{{ error }}</p>{% endif %}
+    <form method="post" action="/login">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <label>Email
+        <input class="input" type="email" name="email" required autofocus>
+      </label>
+      <label>Password
+        <input class="input" type="password" name="password" required>
+      </label>
+      <button class="btn" type="submit">Log in</button>
+    </form>
+    <p><a href="/forgot-password">Forgot your password?</a></p>
+  </div>
+{% endblock %}

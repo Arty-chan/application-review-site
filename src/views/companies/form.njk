@@ -1,0 +1,65 @@
+{% extends "base.njk" %}
+{% import "_macros.njk" as m %}
+{% block title %}{% if companyId %}Edit company{% else %}Add company{% endif %} — {{ siteName }}{% endblock %}
+{% block content %}
+
+<h1>{% if companyId %}Edit company{% else %}Add company{% endif %}</h1>
+{% if error %}<p class="error">{{ error }}</p>{% endif %}
+
+<form method="post" action="{% if companyId %}/companies/{{ companyId }}{% else %}/companies{% endif %}" class="card">
+  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+
+  <label>Company name
+    <input class="input" type="text" name="name" value="{{ values.name }}" required>
+  </label>
+
+  <label>Website URL
+    <input class="input" type="text" name="websiteUrl" value="{{ values.websiteUrl }}" placeholder="acme.com" required>
+  </label>
+
+  <label>Careers page URL (optional)
+    <input class="input" type="text" name="careersUrl" value="{{ values.careersUrl }}" placeholder="acme.com/careers">
+  </label>
+
+  <label>Employee size
+    <select name="employeeSizeRange" class="input">
+      <option value="">Unknown</option>
+      {% for size in employeeSizes %}
+        <option value="{{ size }}" {% if values.employeeSizeRange == size %}selected{% endif %}>{{ size }}</option>
+      {% endfor %}
+    </select>
+  </label>
+
+  {{ m.regionTreePicker(regionTree, values.countries or [], 'countries', 'Countries hired in',
+    "Selecting a region checks every country in it. This affects what's stored — someone hired only in France, say, will still show as hiring in every EU country if EU was selected here rather than France specifically.") }}
+
+  <h3>Industry</h3>
+  {% for ind in allIndustries %}
+    <label class="checkbox-label">
+      <input type="checkbox" name="industries" value="{{ ind.id }}" {% if ind.id|string in (values.industries or []) %}checked{% endif %}>
+      {{ ind.name }}
+    </label>
+  {% endfor %}
+  <label>Add a new industry (optional)
+    <input class="input" type="text" name="newIndustry" maxlength="60">
+  </label>
+
+  <h3>Hiring process</h3>
+  {% for attr in attributes %}
+    <label>{{ attr.label }}{% if attr.helpText %} <span class="note">({{ attr.helpText }})</span>{% endif %}
+      <select name="{{ attr.key }}" class="input">
+        <option value="">Unknown</option>
+        <option value="true" {% if values[attr.key] == 'true' %}selected{% endif %}>Yes</option>
+        <option value="false" {% if values[attr.key] == 'false' %}selected{% endif %}>No</option>
+      </select>
+    </label>
+  {% endfor %}
+
+  <label>General notes (visible to signed-in users only)
+    <textarea class="input" name="generalNotes" maxlength="2000" rows="4">{{ values.generalNotes }}</textarea>
+  </label>
+
+  <button class="btn" type="submit">{% if companyId %}Save changes{% else %}Add company{% endif %}</button>
+</form>
+
+{% endblock %}

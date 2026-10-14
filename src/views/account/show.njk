@@ -1,0 +1,100 @@
+{% extends "base.njk" %}
+{% block title %}Account — {{ siteName }}{% endblock %}
+{% block content %}
+
+<h1>{% if isSelf %}Your account{% else %}{{ viewedUser.displayName or viewedUser.email }}'s account{% endif %}</h1>
+
+<div class="card">
+  <h3>Name</h3>
+  {% if messages.nameError %}<p class="error">{{ messages.nameError }}</p>{% endif %}
+  <form method="post" action="/users/{{ viewedUser.id }}">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <label>Display name
+      <input class="input" type="text" name="displayName" value="{{ viewedUser.displayName }}" required maxlength="{{ displayNameMaxLength }}">
+    </label>
+    <button class="btn" type="submit">Save name</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Email</h3>
+  {% if messages.emailError %}<p class="error">{{ messages.emailError }}</p>{% endif %}
+  {% if messages.emailMessage %}<p>{{ messages.emailMessage }}</p>{% endif %}
+  <p>Current: {{ viewedUser.email }}{% if viewedUser.pendingEmail %} <span class="note">(verification pending for {{ viewedUser.pendingEmail }})</span>{% endif %}</p>
+  <p class="note">Only admins can see {{ "your" if isSelf else "this" }} email address.</p>
+  <form method="post" action="/users/{{ viewedUser.id }}/email">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <label>New email
+      <input class="input" type="email" name="email" placeholder="new@email.com" required>
+    </label>
+    {% if isSelf %}
+      <label>Current password
+        <input class="input" type="password" name="currentPassword" required>
+      </label>
+    {% endif %}
+    <button class="btn" type="submit">Send verification link</button>
+  </form>
+</div>
+
+<div class="card">
+  <h3>Password</h3>
+  {% if messages.passwordError %}<p class="error">{{ messages.passwordError }}</p>{% endif %}
+  {% if messages.passwordMessage %}<p>{{ messages.passwordMessage }}</p>{% endif %}
+  <form method="post" action="/users/{{ viewedUser.id }}/password">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    {% if isSelf %}
+      <label>Current password
+        <input class="input" type="password" name="currentPassword" required>
+      </label>
+    {% endif %}
+    <label>New password
+      <input class="input" type="password" name="newPassword" minlength="{{ passwordMinLength }}" required>
+    </label>
+    <button class="btn" type="submit">{% if isSelf %}Change password{% else %}Set password{% endif %}</button>
+  </form>
+</div>
+
+{% if isAdmin %}
+  <div class="card">
+    <h3>Role</h3>
+    {% if messages.roleError %}<p class="error">{{ messages.roleError }}</p>{% endif %}
+    <p>Current role: <strong>{{ viewedUser.role }}</strong></p>
+    <form method="post" action="/users/{{ viewedUser.id }}/role">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <label>Change to
+        <select name="role" class="input">
+          <option value="user" {% if viewedUser.role == 'user' %}selected{% endif %}>user</option>
+          <option value="admin" {% if viewedUser.role == 'admin' %}selected{% endif %}>admin</option>
+        </select>
+      </label>
+      <button class="btn" type="submit">Change role</button>
+    </form>
+  </div>
+{% else %}
+  <p class="note">Role: {{ viewedUser.role }}</p>
+{% endif %}
+
+{% if viewedUser.role == 'admin' %}
+  <div class="card">
+    <h3>Notifications</h3>
+    <form method="post" action="/users/{{ viewedUser.id }}/notifications">
+      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+      <label class="checkbox-label">
+        <input type="checkbox" name="notifyOnFlags" value="true" {% if viewedUser.notifyOnFlags %}checked{% endif %}>
+        Email when a review is flagged
+      </label>
+      <button class="btn" type="submit">Save</button>
+    </form>
+  </div>
+{% endif %}
+
+<div class="card">
+  <h3>Delete account</h3>
+  <p class="note">Removes the account and its favorites. Reviews and flags stay, shown under the name this account had at the time of deletion.</p>
+  <form method="post" action="/users/{{ viewedUser.id }}/delete" data-confirm="Delete this account? This cannot be undone.">
+    <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+    <button class="btn btn-secondary" type="submit">{% if isSelf %}Delete my account{% else %}Delete this account{% endif %}</button>
+  </form>
+</div>
+
+{% endblock %}

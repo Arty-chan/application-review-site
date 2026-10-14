@@ -1,0 +1,36 @@
+{% extends "base.njk" %}
+{% import "_macros.njk" as m %}
+{% block title %}Flags — {{ siteName }}{% endblock %}
+{% block content %}
+
+<h1>Flagged reviews</h1>
+
+{% if flags.length == 0 %}
+  <p>No flags.</p>
+{% endif %}
+
+{% for flag in flags %}
+  <div class="card">
+    <p>
+      <strong>{{ flag.status }}</strong> —
+      flagged by {{ flag.flaggedByUser.displayName if flag.flaggedByUser else 'a since-deleted account' }}
+      on {{ flag.createdAt | isoDate }}
+    </p>
+    <p>Flag reason: {{ flag.comment }}</p>
+    <hr>
+    <p>
+      Review of <a href="/companies/{{ flag.review.company.id }}">{{ flag.review.company.name }}</a>
+      by {{ flag.review.user.displayName if flag.review.user else flag.review.deletedUserDisplayName or 'a since-deleted account' }}
+      — {{ m.reviewRating(flag.review.rating) }}
+    </p>
+    <p class="review-body">{{ flag.review.comment }}</p>
+    {% if flag.status == 'open' %}
+      <form method="post" action="/flags/{{ flag.id }}/resolve">
+        <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+        <button class="btn btn-secondary" type="submit">Dismiss flag</button>
+      </form>
+    {% endif %}
+  </div>
+{% endfor %}
+
+{% endblock %}
