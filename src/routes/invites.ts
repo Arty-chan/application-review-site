@@ -7,10 +7,11 @@ import { requireAuth } from '../middleware/auth.js';
 import { inviteLimiter } from '../middleware/rate-limit.js';
 import { createToken } from '../lib/tokens.js';
 import { sendInviteEmail } from '../lib/email.js';
+import { emailField } from '../lib/account-fields.js';
 
 export const inviteRouter = Router();
 
-const inviteSchema = z.object({ email: z.string().email() }).strict();
+const inviteSchema = z.object({ email: emailField }).strict();
 
 inviteRouter.get('/invites', requireAuth, (_req, res) => {
   res.render('auth/invite');

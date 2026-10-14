@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../src/db/client.js';
 import { users } from '../src/db/schema.js';
 import { hashPassword } from '../src/lib/passwords.js';
-import { newPasswordField, displayNameField } from '../src/lib/account-fields.js';
+import { newPasswordField, displayNameField, emailField } from '../src/lib/account-fields.js';
 
 async function main() {
   const [email, password, displayName] = process.argv.slice(2);
@@ -13,28 +13,29 @@ async function main() {
     console.error('Usage: npm run create-admin -- <email> <password> "<display name>"');
     process.exit(1);
   }
-  const parsed = z.object({ password: newPasswordField, displayName: displayNameField }).safeParse({ password, displayName });
+  const parsed = z.object({ email: emailField, password: newPasswordField, displayName: displayNameField })
+    .safeParse({ email, password, displayName });
   if (!parsed.success) {
     console.error(`${parsed.error.issues[0].message}.`);
     process.exit(1);
   }
 
-  const existing = await db.query.users.findFirst({ where: eq(users.email, email) });
+  const existing = await db.query.users.findFirst({ where: eq(users.email, parsed.data.email) });
   if (existing) {
-    console.error(`A user with email ${email} already exists.`);
+    console.error(`A user with email ${parsed.data.email} already exists.`);
     process.exit(1);
   }
 
   const passwordHash = await hashPassword(password);
   await db.insert(users).values({
-    email,
+    email: parsed.data.email,
     passwordHash,
     displayName: parsed.data.displayName,
     role: 'admin',
     createdAt: new Date(),
   });
 
-  console.log(`Admin account created for ${email}.`);
+  console.log(`Admin account created for ${parsed.data.email}.`);
 }
 
 await main();

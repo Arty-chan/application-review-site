@@ -5,7 +5,7 @@ import { db } from '../db/client.js';
 import { companies, reviewFlags, users } from '../db/schema.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { hashPassword } from '../lib/passwords.js';
-import { newPasswordField, displayNameField } from '../lib/account-fields.js';
+import { newPasswordField, displayNameField, emailField } from '../lib/account-fields.js';
 import { visibilityGroups, currentVisibility, saveVisibility } from '../lib/visibility.js';
 import { visibilityLevels } from '../config/company-attributes.js';
 import { importColumns, importHeaderRow, importCompanies, type ImportOutcome } from './import.js';
@@ -87,7 +87,7 @@ adminRouter.post('/flags/:id/resolve', requireAdmin, async (req, res) => {
 // An account set up directly by an admin, password and all — no invite email
 // needed, so it works before email is set up (and for testing locally).
 const newUserSchema = z.object({
-  email: z.string().trim().email('Enter a valid email'),
+  email: emailField,
   displayName: displayNameField,
   password: newPasswordField,
   role: z.enum(['user', 'admin']),

@@ -6,7 +6,7 @@ import { users, reviews, companies } from '../db/schema.js';
 import { requireAuth, requireSelfOrAdmin, type CurrentUser } from '../middleware/auth.js';
 import { accountChangeLimiter } from '../middleware/rate-limit.js';
 import { hashPassword, verifyPassword } from '../lib/passwords.js';
-import { newPasswordField, displayNameField } from '../lib/account-fields.js';
+import { newPasswordField, displayNameField, emailField } from '../lib/account-fields.js';
 import { createToken, lookupToken, consumeToken } from '../lib/tokens.js';
 import { sendEmailVerification } from '../lib/email.js';
 import { endSessions } from '../lib/sessions.js';
@@ -75,7 +75,7 @@ accountRouter.post('/users/:id', requireSelfOrAdmin, async (req, res) => {
 });
 
 const updateEmailSchema = z.object({
-  email: z.string().trim().email('Enter a valid email'),
+  email: emailField,
   currentPassword: z.string().optional(),
 }).strict();
 

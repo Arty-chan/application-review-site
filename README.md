@@ -18,11 +18,10 @@ adding users, choosing who can see what, and bulk import of companies from
 pasted CSV are all built and have been exercised end to end against a real
 database.
 
-Known gaps, worth knowing about before you rely on this:
+### Known gaps
 
-- **Emails are matched exactly as typed** — `Alice@example.com` and
-  `alice@example.com` are different accounts as far as login and invites are
-  concerned.
+Worth knowing about before you rely on this:
+
 - **A pending invite can't be re-sent** — inviting an address that was invited
   but never activated reports it as "already a member".
 - **The Docker image itself hasn't been built yet** — the machine this was
@@ -37,6 +36,8 @@ Known gaps, worth knowing about before you rely on this:
 Needs Node 22 or newer (the Docker image uses Node 26). Works on Windows,
 macOS and Linux — no C++ toolchain needed (see `.npmrc` for why). Run these in
 Command Prompt on Windows, or Terminal on macOS, from the project folder.
+
+### First-time setup
 
 ```bash
 npm install
@@ -74,16 +75,20 @@ The site is at http://localhost:6559 — stop it with Ctrl+C. (On Windows, the
 first run may bring up a Windows Firewall prompt for Node; allowing or
 cancelling are both fine, since the site is only used on localhost.)
 
-To start over with an empty database, stop the site, delete the `data` folder
-(`rmdir /s /q data` on Windows, `rm -rf data` on macOS), then run the last
-three steps before `npm run dev` again.
+### Trying it out
 
 Log in with the admin account you just created. From there: use **Add user**
 on the **Admin** page (in the nav bar) to make a second, regular account with
 a password you pick, then log in as it in a private window to see the
-regular-user experience. Add a company, leave a review, try the search filters. With `RESEND_API_KEY` left
-empty, no email is sent — invite, reset and verify links are printed in the
-`npm run dev` console instead.
+regular-user experience. Add a company, leave a review, try the search
+filters. With `RESEND_API_KEY` left empty, no email is sent — invite, reset
+and verify links are printed in the `npm run dev` console instead.
+
+### Starting over
+
+To start over with an empty database, stop the site, delete the `data` folder
+(`rmdir /s /q data` on Windows, `rm -rf data` on macOS), then run
+`db:migrate`, `seed` and `create-admin` from "First-time setup" again.
 
 ## Testing
 
@@ -100,7 +105,7 @@ set by `tests/setup.ts`, which is preloaded into every test process) with real
 migrations applied fresh per test file — not mocks. They never touch
 `data/app.db` and never send email, whatever is in `.env`.
 
-Two layers:
+### What the tests cover
 
 - **Library and schema tests** (`tests/lib`, `tests/db`, `tests/config`) —
   logic that's easy to get subtly wrong and hard to eyeball-check: URL/domain
@@ -113,11 +118,10 @@ Two layers:
   included (sessions, CSRF, auth guards), started on a random port and driven
   over HTTP by a small cookie-keeping client in `tests/helpers/http.ts`. They
   cover the main flow of each feature: login/logout, password reset, invites,
-  the Admin page (adding users, visibility settings), adding/editing/
-  searching/sorting/deleting companies,
-  CSV import, reviews (including who can read them), flags, no-reply reports,
-  favorites, account settings and roles — plus the basic permission checks
-  (signed-out visitors, other users, non-admins).
+  the Admin page (adding users, visibility settings), adding/editing/searching/
+  sorting/deleting companies, CSV import, reviews (including who can read
+  them), flags, no-reply reports, favorites, account settings and roles — plus
+  the basic permission checks (signed-out visitors, other users, non-admins).
 
 The route tests deliberately stick to the standard paths rather than edge
 cases. Note the login rate limiter (10 attempts per 15 minutes) applies in
@@ -151,7 +155,7 @@ When you change `src/db/schema.ts`, on your own computer:
 
 Every other copy of the database only needs step 2, since the migration is
 already written: your own after pulling a change that includes one, and the
-live site's. On the VPS, follow "To deploy an update" below, which backs the
+live site's. On the VPS, follow "Updating a deploy" below, which backs the
 database up first.
 
 Most changes (a new table or column) generate a single `CREATE` or `ALTER`
@@ -195,10 +199,10 @@ src/
                                 "Posts ghost jobs"), review reports ("No reply
                                 after application"), company notes, and the
                                 reviews themselves, with each one's default
-                                visibility. Admins choose
-                                who sees each one on the Admin page (saved in the
-                                database — see lib/visibility.ts). Reviewers' names
-                                are always signed-in only ("[Masked]" otherwise).
+                                visibility. Admins choose who sees each one on
+                                the Admin page (saved in the database — see
+                                lib/visibility.ts). Reviewers' names are always
+                                signed-in only ("[Masked]" otherwise).
   lib/                         Framework-agnostic logic: passwords, tokens, email,
                                 sessions, the shared account-form rules, who can
                                 see what, domain normalization, region tree helpers
@@ -212,9 +216,9 @@ public/
                                 confirmations; re-sorting the search results as
                                 soon as the sort changes; the region picker's
                                 selected count, select/deselect all, and
-                                remembered open/closed state). Must stay a static file: the
-                                Content-Security-Policy blocks inline <script>
-                                and onclick=/onsubmit=.
+                                remembered open/closed state). Must stay a
+                                static file: the Content-Security-Policy blocks
+                                inline <script> and onclick=/onsubmit=.
 scripts/
   seed.ts                      Region/country/industry seed script
   create-admin.ts              Creates the first admin — a command-line script,
@@ -229,13 +233,15 @@ data/                          SQLite lives here at runtime. Gitignored.
 
 The deploy instructions assume you're using a VPS with Caddy.
 
+### First deploy
+
 ```bash
 git clone <this repo> /path/on/vps
 cd /path/on/vps
 cp .env.example .env    # set APP_URL (https://yourdomain), SESSION_SECRET, RESEND_API_KEY, EMAIL_FROM
 mkdir -p data && chown 1000:1000 data   # the app runs as uid 1000, not root (prefix with sudo if you're not root)
-docker compose up -d --build
-curl http://127.0.0.1:6559/healthz   # {"ok":true}, 
+docker compose up -d --build application-review-site
+curl http://127.0.0.1:6559/healthz   # {"ok":true}
 docker compose exec application-review-site npx drizzle-kit migrate
 docker compose exec application-review-site npm run seed
 docker compose exec application-review-site npm run create-admin -- you@yourdomain.com yourpassword "Your Name"
@@ -248,8 +254,13 @@ Caddy's automatic HTTPS needs that to issue a certificate. Test through
 `https://yourdomain/`, not the bare IP or port 6559 directly — the session
 cookie is `secure: true` in production and won't be sent over plain HTTP.
 
-Production-mode behavior, all switched on by `NODE_ENV=production`, which the
-Docker image sets (don't put `NODE_ENV` in `.env`):
+The container binds to `127.0.0.1:6559` only — not reachable from outside the
+VPS directly, only through Caddy.
+
+### Production mode
+
+These are all switched on by `NODE_ENV=production`, which the Docker image sets
+(don't put `NODE_ENV` in `.env`):
 
 - The app **refuses to start** if `SESSION_SECRET` is unset or still
   `changeme` — `docker compose logs application-review-site` will say so.
@@ -259,29 +270,46 @@ Docker image sets (don't put `NODE_ENV` in `.env`):
   of Caddy (a CDN, say), the `trust proxy` setting in `src/app.ts` needs to
   change to match.
 
-To deploy an update, back up the database, then apply any new migrations
-before starting the new version — the app doesn't migrate the database by
-itself, and new code expects the new schema. The app is stopped meanwhile, so
-the backup is a complete copy (while it runs, SQLite keeps its latest writes in
-a separate `-wal` file beside the database) and no one uses the new code before
-its migration is in:
+### Updating a deploy
+
+To deploy an update, run the commands below from the project folder on the
+VPS. In order, they:
+
+1. Fetch the new code and build its image. The current version keeps running
+   meanwhile, so the site is only down for the next few steps, which take
+   seconds.
+2. Stop the app, so nothing writes to the database while it's copied (while
+   the app runs, SQLite keeps its latest writes in a separate `-wal` file).
+3. Back up the whole `data` folder. Use `sudo cp` if you're not root.
+4. Apply any new migrations, in a temporary container from the new image —
+   `exec` can't be used while the app is stopped. The app doesn't migrate the
+   database by itself, and new code expects the new schema. Migrations already
+   applied are skipped, so for an update without one this does nothing, and the
+   steps are the same for every update.
+5. Start the new version, and check it answers with `{"ok":true}`.
 
 ```bash
 git pull
-docker compose build
-docker compose stop
-cp -a data "data-backup-$(date +%F)"   # prefix with sudo if you're not root
+docker compose build application-review-site
+docker compose stop application-review-site
+cp -a data "data-backup-$(date +%F)"
 docker compose run --rm application-review-site npx drizzle-kit migrate
-docker compose up -d
-curl http://127.0.0.1:6559/healthz   # {"ok":true}
+docker compose up -d application-review-site
+curl http://127.0.0.1:6559/healthz
 ```
 
 If something goes wrong, the backup folder is a full copy of `data/`: stop the
 app, put the backup back in place of `data/`, check out the code you were on
-before (`git checkout <commit>`), and `docker compose up -d --build`.
+before (`git checkout <commit>`), and
+`docker compose up -d --build application-review-site`.
 
-The container binds to `127.0.0.1:6559` only — not reachable from outside the
-VPS directly, only through Caddy. `./data` on the host is bind-mounted into
-the container, so the SQLite file survives container rebuilds. Back it up
-like any single file — a cron job, or [Litestream](https://litestream.io) for
-continuous replication.
+### Backups
+
+`./data` on the host is bind-mounted into the container, so the database
+survives container rebuilds. Back up the whole folder, not just `app.db`, and
+don't copy it while the app is running: SQLite keeps its latest writes in the
+`-wal` file until it folds them into the database, so a copy taken mid-write
+can miss some. Either copy it with the app stopped, as in the update steps
+above (a cron job can do the same), or use
+[Litestream](https://litestream.io), which backs up continuously while the app
+runs.

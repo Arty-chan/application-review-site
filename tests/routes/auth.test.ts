@@ -54,6 +54,13 @@ describe('login and logout', () => {
     assert.match(home.text, /Logged In Larry/);
   });
 
+  test("the email's capitalization doesn't matter", async () => {
+    const user = await createUser();
+    const client = new TestClient(baseUrl);
+    await client.login(` ${user.email.toUpperCase()} `, TEST_PASSWORD);
+    assert.match((await client.get('/')).text, /Log out/);
+  });
+
   test('a wrong password is rejected', async () => {
     const user = await createUser();
     const res = await new TestClient(baseUrl).post('/login', { email: user.email, password: 'wrong-password' });

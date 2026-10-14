@@ -2,6 +2,10 @@ services:
   application-review-site:
     build: .
     restart: unless-stopped
+    # Runs a tiny init process in front of Node, which passes on Docker's stop
+    # signal. Without it, Node (as the container's first process) ignores the
+    # signal, and every stop or restart waits 10 seconds to force-kill it.
+    init: true
     env_file: .env
     volumes:
       # Named bind mount, not a Docker volume — keeps the SQLite file at a known

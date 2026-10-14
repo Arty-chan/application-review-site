@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db, transaction } from '../db/client.js';
 import { users } from '../db/schema.js';
 import { hashPassword, verifyPassword } from '../lib/passwords.js';
-import { newPasswordField, displayNameField } from '../lib/account-fields.js';
+import { newPasswordField, displayNameField, emailField } from '../lib/account-fields.js';
 import { createToken, lookupResetOrInviteToken, consumeToken } from '../lib/tokens.js';
 import { sendPasswordResetEmail } from '../lib/email.js';
 import { endSessions } from '../lib/sessions.js';
@@ -15,7 +15,7 @@ export const authRouter = Router();
 // ---------- Login / logout ----------
 
 const loginSchema = z.object({
-  email: z.string().email(),
+  email: emailField,
   password: z.string().min(1),
 }).strict();
 
@@ -54,7 +54,7 @@ authRouter.post('/logout', (req, res) => {
 
 // ---------- Forgot password ----------
 
-const forgotPasswordSchema = z.object({ email: z.string().email() }).strict();
+const forgotPasswordSchema = z.object({ email: emailField }).strict();
 
 authRouter.get('/forgot-password', (_req, res) => {
   res.render('auth/forgot-password');
