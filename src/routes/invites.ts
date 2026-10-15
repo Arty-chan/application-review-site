@@ -23,21 +23,23 @@ inviteRouter.post('/invites', requireAuth, inviteLimiter, async (req, res) => {
     return res.status(400).render('auth/invite', { error: 'Enter a valid email.' });
   }
 
+  // An account with a password has accepted its invite. One without is an
+  // invite never accepted (perhaps expired): it's sent again, and the new link
+  // replaces the old one.
   const existing = await db.query.users.findFirst({ where: eq(users.email, parsed.data.email) });
-  if (existing) {
+  if (existing?.passwordHash) {
     return res.render('auth/invite', { message: `${parsed.data.email} is already a member.` });
   }
 
-  // The account and its invite token together or not at all — an account
-  // without a token would be stuck, since it can't be invited again.
+  // A new account and its invite token together or not at all.
   const token = transaction((tx) => {
-    const newUser = tx.insert(users).values({
+    const userId = existing?.id ?? tx.insert(users).values({
       email: parsed.data.email,
       role: 'user',
       invitedBy: req.currentUser!.id,
       createdAt: new Date(),
-    }).returning().get();
-    return createToken(newUser.id, 'invite_setup', tx);
+    }).returning().get().id;
+    return createToken(userId, 'invite_setup', tx);
   });
   // Sent only once the transaction has committed — an email can't be rolled back.
   await sendInviteEmail(parsed.data.email, token);

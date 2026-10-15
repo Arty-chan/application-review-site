@@ -19,19 +19,6 @@ companies from pasted CSV and exporting them as CSV (each admins only unless
 the Admin page opens it to all members) are all built and have been
 exercised end to end against a real database.
 
-### Known gaps
-
-Worth knowing about before you rely on this:
-
-- **A pending invite can't be re-sent** — inviting an address that was invited
-  but never activated reports it as "already a member".
-- **The Docker image itself hasn't been built yet** — the machine this was
-  last checked on can't run Docker. Everything the image does has been run
-  directly on Node 26.10 (the image's version): `npm ci`, the full test suite,
-  migrate/seed/create-admin, `npm run build`, and the production server behind
-  a simulated Caddy (secure cookie, login). Still, check `/healthz` and a login
-  after the first `docker compose up --build` on the VPS.
-
 ## Local setup
 
 Needs Node 22 or newer (the Docker image uses Node 26). Works on Windows,

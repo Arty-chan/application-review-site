@@ -83,11 +83,19 @@ const setPasswordSchema = z.object({
   displayName: displayNameField.optional(),
 }).strict();
 
+/** Whether the page also asks for a display name: when accepting an invite, or
+ * resetting the password of an account that never accepted its invite — so no
+ * one gets in without one. */
+async function lacksDisplayName(userId: number): Promise<boolean> {
+  const user = await db.query.users.findFirst({ where: eq(users.id, userId) });
+  return !user?.displayName;
+}
+
 authRouter.get('/reset-password/:token', async (req, res) => {
   const result = await lookupResetOrInviteToken(req.params.token);
   if (!result.valid) return res.status(400).render('auth/reset-password', { valid: false });
 
-  res.render('auth/reset-password', { valid: true, needsDisplayName: result.purpose === 'invite_setup' });
+  res.render('auth/reset-password', { valid: true, needsDisplayName: await lacksDisplayName(result.userId) });
 });
 
 authRouter.post('/reset-password/:token', async (req, res, next) => {
@@ -95,8 +103,7 @@ authRouter.post('/reset-password/:token', async (req, res, next) => {
   if (!result.valid) return res.status(400).render('auth/reset-password', { valid: false });
   const { userId, tokenId } = result;
 
-  // Invite acceptance also sets the display name; a plain password reset doesn't.
-  const needsDisplayName = result.purpose === 'invite_setup';
+  const needsDisplayName = await lacksDisplayName(userId);
   const fail = (error: string) => res.status(400).render('auth/reset-password', { valid: true, needsDisplayName, error });
 
   const parsed = setPasswordSchema.safeParse(req.body);

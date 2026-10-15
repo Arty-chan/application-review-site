@@ -123,6 +123,19 @@ describe('password reset', () => {
   });
 });
 
+describe('an invite that expired before it was accepted', () => {
+  test('a password reset asks for the display name too', async () => {
+    const [pending] = await db.insert(users).values({ email: 'expired-invite@example.test', createdAt: new Date() }).returning();
+    const token = createToken(pending.id, 'password_reset');
+    const client = new TestClient(baseUrl);
+
+    assert.match((await client.get(`/reset-password/${token}`)).text, /name="displayName"/);
+    const res = await client.post(`/reset-password/${token}`, { displayName: 'Late Arrival', password: 'late-arrival-password' });
+    assert.equal(res.status, 302);
+    assert.match((await client.get('/')).text, /Late Arrival/);
+  });
+});
+
 describe('invites', () => {
   test('a signed-in user can invite someone by email', async () => {
     const inviter = await createUser();
@@ -137,6 +150,19 @@ describe('invites', () => {
     assert.ok(invited);
     assert.equal(invited.passwordHash, null, 'an invited account has no password until activated');
     assert.equal(invited.invitedBy, inviter.id);
+  });
+
+  test("inviting someone who never accepted sends a fresh invite; a member can't be invited", async () => {
+    const inviter = await createUser();
+    const client = new TestClient(baseUrl);
+    await client.login(inviter.email, TEST_PASSWORD);
+
+    await client.post('/invites', { email: 'twice@example.test' });
+    const again = await client.post('/invites', { email: 'twice@example.test' });
+    assert.match(again.text, /Invite sent to twice@example.test/);
+    assert.equal((await db.select().from(users).where(eq(users.email, 'twice@example.test'))).length, 1, 'still one account');
+
+    assert.match((await client.post('/invites', { email: inviter.email })).text, /already a member/);
   });
 
   test('accepting an invite sets a display name and password, then signs you in', async () => {
