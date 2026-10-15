@@ -58,7 +58,7 @@ describe('importing companies from CSV', () => {
     try {
       const page = await member.get('/import');
       assert.equal(page.status, 200);
-      assert.doesNotMatch(page.text, /Export companies/, 'exporting stays admins only');
+      assert.doesNotMatch(page.text, /Export companies/, 'exporting is a separate setting');
       assert.match((await member.get('/')).text, /href="\/import"/, 'the nav links to it');
       assert.equal((await new TestClient(baseUrl).get('/import')).location, '/login');
     } finally {
@@ -121,12 +121,21 @@ describe('exporting companies as CSV', () => {
     assert.ok(row.startsWith('"Export, Inc.",https://export.com,,,US,,"A ""quoted"" word",'), 'quotes inside a value are doubled');
   });
 
-  test('members cannot export, even when they can import', async () => {
-    saveVisibility({ importPage: 'user' });
+  test('only admins can export, by default', async () => {
+    assert.equal((await member.get('/import/export.csv')).status, 403);
+  });
+
+  test("an admin setting lets members export too, without what they can't see", async () => {
+    saveVisibility({ importPage: 'user', exportCompanies: 'user', generalNotes: 'admin' });
     try {
-      assert.equal((await member.get('/import/export.csv')).status, 403);
+      assert.match((await member.get('/import')).text, /Export companies/);
+      const res = await member.get('/import/export.csv');
+      assert.equal(res.status, 200);
+      const header = res.text.replace(/^\uFEFF/, '').split('\n')[0];
+      assert.ok(header.startsWith('name,websiteUrl,'));
+      assert.ok(!header.split(',').includes('generalNotes'), 'notes hidden from members are left out');
     } finally {
-      saveVisibility({ importPage: 'admin' });
+      saveVisibility({ importPage: 'admin', exportCompanies: 'admin', generalNotes: 'user' });
     }
   });
 });

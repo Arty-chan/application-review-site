@@ -1,7 +1,7 @@
 import { db, transaction } from '../db/client.js';
 import { visibilitySettings } from '../db/schema.js';
 import {
-  canView, companyAttributes, reviewReports, reviewsSetting, companyNotesSetting, importPageSetting,
+  canView, companyAttributes, reviewReports, reviewsSetting, companyNotesSetting, importPageSetting, exportSetting,
   type Visibility, type Viewer, type VisibilitySettingDef,
 } from '../config/company-attributes.js';
 
@@ -32,7 +32,7 @@ export const visibilityGroups: { name: string; note?: string; settings: Visibili
   },
   {
     name: 'Pages',
-    settings: [importPageSetting],
+    settings: [importPageSetting, exportSetting],
   },
 ];
 

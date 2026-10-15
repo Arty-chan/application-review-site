@@ -8,7 +8,8 @@
  *   shown on each company as the number of reviewers who reported it.
  * - reviewsSetting: who can read the reviews themselves.
  * - companyNotesSetting: who can read each company's free-text notes.
- * - importPageSetting: who can use the Import page.
+ * - importPageSetting, exportSetting: who can use the Import page, and export
+ *   companies from it.
  *
  * The company page, the search results, the search filters, and the forms all
  * loop over these lists rather than naming fields individually.
@@ -133,11 +134,21 @@ export const companyNotesSetting: VisibilitySettingDef = {
 // ---------- Pages ----------
 
 /** Who can use the Import page, to bulk-add companies from CSV — never anyone
- * signed out. Exporting companies there is for admins only, whatever this is. */
+ * signed out. */
 export const importPageSetting: VisibilitySettingDef = {
   key: 'importPage',
   label: 'Import page',
-  helpText: 'Bulk-adding companies from CSV. Exporting them there is always admins only.',
+  helpText: 'Bulk-adding companies from CSV.',
+  defaultVisibility: 'admin',
+  levels: ['user', 'admin'],
+};
+
+/** Who can export every company as CSV, from the Import page — never anyone
+ * signed out. Each person's export leaves out what they can't see. */
+export const exportSetting: VisibilitySettingDef = {
+  key: 'exportCompanies',
+  label: 'Export companies',
+  helpText: 'Downloading every company as CSV, from the Import page (so members need that page too). Leaves out what the person exporting can\'t see.',
   defaultVisibility: 'admin',
   levels: ['user', 'admin'],
 };

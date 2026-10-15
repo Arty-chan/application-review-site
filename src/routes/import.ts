@@ -6,10 +6,12 @@ import { db } from '../db/client.js';
 import {
   companies, companyCountries, companyIndustries, countries, industries, employeeSizeRanges,
 } from '../db/schema.js';
-import { requireAdmin, requireLevel, type CurrentUser } from '../middleware/auth.js';
+import { requireLevel, type CurrentUser } from '../middleware/auth.js';
 import { getRegionTree, descendantCountryCodes, type RegionTreeNode } from '../lib/regions.js';
-import { visibilityOf } from '../lib/visibility.js';
-import { companyAttributes, importPageSetting } from '../config/company-attributes.js';
+import { visibilityOf, canViewSetting, visibleAttributes } from '../lib/visibility.js';
+import {
+  companyAttributes, importPageSetting, exportSetting, companyNotesSetting,
+} from '../config/company-attributes.js';
 import { saveCompany } from './companies.js';
 
 export const importRouter = Router();
@@ -207,28 +209,41 @@ export async function companiesCsv(columns: string[] = columnNames): Promise<str
 
 // ---------- Routes ----------
 
-/** The Import page is for whoever the admin Settings allow — never anyone signed out. */
+// Importing and exporting are each for whoever the admin Settings allow — never
+// anyone signed out.
 const requireImportAccess = requireLevel(() => visibilityOf(importPageSetting));
+const requireExportAccess = requireLevel(() => visibilityOf(exportSetting));
 
-function renderImportPage(res: Response, outcome?: ImportOutcome) {
+function renderImportPage(res: Response, user: CurrentUser, outcome?: ImportOutcome) {
   res.status(outcome && 'error' in outcome ? 400 : 200).render('companies/import', {
-    csvColumns, headerRow, csvImport: outcome,
+    csvColumns, headerRow, csvImport: outcome, canExport: canViewSetting(exportSetting, user),
   });
 }
 
-importRouter.get('/import', requireImportAccess, (_req, res) => {
-  renderImportPage(res);
+importRouter.get('/import', requireImportAccess, (req, res) => {
+  renderImportPage(res, req.currentUser!);
 });
 
 const importSchema = z.object({ csv: z.string().trim().min(1, 'Paste the CSV to import.') }).strict();
 
 importRouter.post('/import', requireImportAccess, async (req, res) => {
   const parsed = importSchema.safeParse(req.body);
-  if (!parsed.success) return renderImportPage(res, { csv: '', error: parsed.error.issues[0]?.message ?? 'Invalid submission.' });
-  renderImportPage(res, await importCompanies(parsed.data.csv, req.currentUser!));
+  if (!parsed.success) {
+    return renderImportPage(res, req.currentUser!, { csv: '', error: parsed.error.issues[0]?.message ?? 'Invalid submission.' });
+  }
+  renderImportPage(res, req.currentUser!, await importCompanies(parsed.data.csv, req.currentUser!));
 });
 
-// Admins only, whoever the Import page itself is open to.
-importRouter.get('/import/export.csv', requireAdmin, async (_req, res) => {
-  res.attachment('companies.csv').send(await companiesCsv());
+/** The columns someone can export: without the attributes or notes hidden from them. */
+function exportableColumns(user: CurrentUser): string[] {
+  const visible = new Set(visibleAttributes(user).map((a) => a.key));
+  const hidden = [
+    ...companyAttributes.filter((a) => !visible.has(a.key)).map((a) => a.key),
+    ...(canViewSetting(companyNotesSetting, user) ? [] : ['generalNotes']),
+  ];
+  return columnNames.filter((name) => !hidden.includes(name));
+}
+
+importRouter.get('/import/export.csv', requireExportAccess, async (req, res) => {
+  res.attachment('companies.csv').send(await companiesCsv(exportableColumns(req.currentUser!)));
 });
