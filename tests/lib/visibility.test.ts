@@ -1,9 +1,9 @@
 import { test, describe, before } from 'node:test';
 import assert from 'node:assert/strict';
 import { applyMigrations } from '../helpers/db.js';
-import { companyAttributes } from '../../src/config/company-attributes.js';
+import { companyAttributes, reviewsSetting } from '../../src/config/company-attributes.js';
 import {
-  currentVisibility, saveVisibility, visibleAttributes, canViewReviews,
+  currentVisibility, saveVisibility, visibleAttributes, canViewSetting,
 } from '../../src/lib/visibility.js';
 
 const anonymous = undefined;
@@ -24,10 +24,10 @@ describe('visibility settings', () => {
     saveVisibility({ hiresRemote: 'user', reviews: 'admin' });
     assert.ok(!visibleAttributes(anonymous).some((a) => a.key === 'hiresRemote'));
     assert.ok(visibleAttributes(user).some((a) => a.key === 'hiresRemote'));
-    assert.deepEqual([anonymous, user, admin].map(canViewReviews), [false, false, true]);
+    assert.deepEqual([anonymous, user, admin].map((v) => canViewSetting(reviewsSetting, v)), [false, false, true]);
 
     saveVisibility({ hiresRemote: 'public', reviews: 'public' });
     assert.ok(visibleAttributes(anonymous).some((a) => a.key === 'hiresRemote'));
-    assert.ok(canViewReviews(anonymous));
+    assert.ok(canViewSetting(reviewsSetting, anonymous));
   });
 });

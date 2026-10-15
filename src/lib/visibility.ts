@@ -2,7 +2,7 @@ import { db, transaction } from '../db/client.js';
 import { visibilitySettings } from '../db/schema.js';
 import {
   canView, companyAttributes, reviewReports, reviewsSetting, companyNotesSetting, importPageSetting,
-  type CompanyAttributeDef, type ReviewReportDef, type Visibility, type Viewer, type VisibilitySettingDef,
+  type Visibility, type Viewer, type VisibilitySettingDef,
 } from '../config/company-attributes.js';
 
 // Who can see what, as set by admins on the Admin page. A setting an admin has
@@ -55,32 +55,21 @@ export function saveVisibility(choices: Record<string, Visibility>): void {
   });
 }
 
-export function visibleAttributes(viewer: Viewer): CompanyAttributeDef[] {
+/** One setting's visibility right now. */
+export function visibilityOf(setting: VisibilitySettingDef): Visibility {
+  return currentVisibility().get(setting.key)!;
+}
+
+/** Whether this viewer can see what one setting covers. */
+export function canViewSetting(setting: VisibilitySettingDef, viewer: Viewer): boolean {
+  return canView(visibilityOf(setting), viewer);
+}
+
+/** The settings in a list (e.g. the company attributes) this viewer can see. */
+function visibleOf<T extends VisibilitySettingDef>(settings: T[], viewer: Viewer): T[] {
   const visibility = currentVisibility();
-  return companyAttributes.filter((a) => canView(visibility.get(a.key)!, viewer));
+  return settings.filter((s) => canView(visibility.get(s.key)!, viewer));
 }
 
-export function visibleReviewReports(viewer: Viewer): ReviewReportDef[] {
-  const visibility = currentVisibility();
-  return reviewReports.filter((r) => canView(visibility.get(r.key)!, viewer));
-}
-
-export function reviewVisibility(): Visibility {
-  return currentVisibility().get(reviewsSetting.key)!;
-}
-
-export function canViewReviews(viewer: Viewer): boolean {
-  return canView(reviewVisibility(), viewer);
-}
-
-export function companyNotesVisibility(): Visibility {
-  return currentVisibility().get(companyNotesSetting.key)!;
-}
-
-export function canViewCompanyNotes(viewer: Viewer): boolean {
-  return canView(companyNotesVisibility(), viewer);
-}
-
-export function canUseImportPage(viewer: Viewer): boolean {
-  return canView(currentVisibility().get(importPageSetting.key)!, viewer);
-}
+export const visibleAttributes = (viewer: Viewer) => visibleOf(companyAttributes, viewer);
+export const visibleReviewReports = (viewer: Viewer) => visibleOf(reviewReports, viewer);

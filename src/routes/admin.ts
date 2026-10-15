@@ -5,7 +5,7 @@ import { db } from '../db/client.js';
 import { companies, reviewFlags, users } from '../db/schema.js';
 import { requireAdmin } from '../middleware/auth.js';
 import { hashPassword } from '../lib/passwords.js';
-import { newPasswordField, displayNameField, emailField } from '../lib/account-fields.js';
+import { newPasswordField, displayNameField, emailField, roleField } from '../lib/account-fields.js';
 import { visibilityGroups, currentVisibility, saveVisibility } from '../lib/visibility.js';
 import { visibilityLevels, type VisibilitySettingDef } from '../config/company-attributes.js';
 
@@ -89,7 +89,7 @@ const newUserSchema = z.object({
   email: emailField,
   displayName: displayNameField,
   password: newPasswordField,
-  role: z.enum(['user', 'admin']),
+  role: roleField,
 }).strict();
 
 adminRouter.post('/admin/users/new', requireAdmin, async (req, res) => {

@@ -35,10 +35,14 @@ export type Visibility = typeof visibilityLevels[number]['value'];
 /** The signed-in user, or null/undefined for an anonymous visitor. */
 export type Viewer = { role: 'user' | 'admin' } | null | undefined;
 
+export function isAdmin(viewer: Viewer): boolean {
+  return viewer?.role === 'admin';
+}
+
 export function canView(visibility: Visibility, viewer: Viewer): boolean {
   if (visibility === 'public') return true;
   if (visibility === 'user') return !!viewer;
-  return viewer?.role === 'admin';
+  return isAdmin(viewer);
 }
 
 /** Anything whose visibility admins can set. Every key is unique across all of them. */

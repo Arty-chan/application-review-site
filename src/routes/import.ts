@@ -1,4 +1,4 @@
-import { Router, type Request, type Response, type NextFunction } from 'express';
+import { Router, type Response } from 'express';
 import { z } from 'zod';
 import { parse } from 'csv-parse/sync';
 import { asc, count, eq } from 'drizzle-orm';
@@ -6,10 +6,10 @@ import { db } from '../db/client.js';
 import {
   companies, companyCountries, companyIndustries, countries, industries, employeeSizeRanges,
 } from '../db/schema.js';
-import { requireAdmin, type CurrentUser } from '../middleware/auth.js';
+import { requireAdmin, requireLevel, type CurrentUser } from '../middleware/auth.js';
 import { getRegionTree, descendantCountryCodes, type RegionTreeNode } from '../lib/regions.js';
-import { canUseImportPage } from '../lib/visibility.js';
-import { companyAttributes } from '../config/company-attributes.js';
+import { visibilityOf } from '../lib/visibility.js';
+import { companyAttributes, importPageSetting } from '../config/company-attributes.js';
 import { saveCompany } from './companies.js';
 
 export const importRouter = Router();
@@ -208,11 +208,7 @@ export async function companiesCsv(columns: string[] = columnNames): Promise<str
 // ---------- Routes ----------
 
 /** The Import page is for whoever the admin Settings allow — never anyone signed out. */
-function requireImportAccess(req: Request, res: Response, next: NextFunction) {
-  if (!req.currentUser) return res.redirect('/login');
-  if (!canUseImportPage(req.currentUser)) return res.status(403).render('errors/403');
-  next();
-}
+const requireImportAccess = requireLevel(() => visibilityOf(importPageSetting));
 
 function renderImportPage(res: Response, outcome?: ImportOutcome) {
   res.status(outcome && 'error' in outcome ? 400 : 200).render('companies/import', {

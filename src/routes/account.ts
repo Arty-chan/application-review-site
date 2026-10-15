@@ -3,10 +3,11 @@ import { z } from 'zod';
 import { eq, sql, desc } from 'drizzle-orm';
 import { db, transaction } from '../db/client.js';
 import { users, reviews, companies } from '../db/schema.js';
-import { requireAuth, requireSelfOrAdmin, type CurrentUser } from '../middleware/auth.js';
+import { requireAuth, requireAdmin, requireSelfOrAdmin, type CurrentUser } from '../middleware/auth.js';
 import { accountChangeLimiter } from '../middleware/rate-limit.js';
 import { hashPassword, verifyPassword } from '../lib/passwords.js';
-import { newPasswordField, displayNameField, emailField } from '../lib/account-fields.js';
+import { newPasswordField, displayNameField, emailField, roleField } from '../lib/account-fields.js';
+import { isAdmin } from '../config/company-attributes.js';
 import { createToken, lookupToken, consumeToken } from '../lib/tokens.js';
 import { sendEmailVerification } from '../lib/email.js';
 import { endSessions } from '../lib/sessions.js';
@@ -15,7 +16,7 @@ export const accountRouter = Router();
 
 export async function isLastAdmin(userId: number): Promise<boolean> {
   const target = await db.query.users.findFirst({ where: eq(users.id, userId) });
-  if (!target || target.role !== 'admin') return false;
+  if (!target || !isAdmin(target)) return false;
   const [{ count }] = await db.select({ count: sql<number>`count(*)` }).from(users).where(eq(users.role, 'admin'));
   return count <= 1;
 }
@@ -32,7 +33,7 @@ function renderAccount(
   res.status(status).render('account/show', {
     viewedUser,
     isSelf: req.currentUser!.id === viewedUser.id,
-    isAdmin: req.currentUser!.role === 'admin',
+    isAdmin: isAdmin(req.currentUser),
     messages,
   });
 }
@@ -155,14 +156,11 @@ accountRouter.post('/users/:id/notifications', requireSelfOrAdmin, async (req, r
   res.redirect(`/users/${user.id}`);
 });
 
-const updateRoleSchema = z.object({ role: z.enum(['user', 'admin']) }).strict();
+const updateRoleSchema = z.object({ role: roleField }).strict();
 
-accountRouter.post('/users/:id/role', requireSelfOrAdmin, async (req, res) => {
-  // requireSelfOrAdmin already ensures the actor is either this user or an
-  // admin — but role changes are never self-service, so enforce admin-only
-  // explicitly rather than relying on the shared guard's self-branch.
-  if (req.currentUser!.role !== 'admin') return res.status(403).render('errors/403');
-
+// Admins only — role changes are never self-service. requireSelfOrAdmin then
+// just loads the user being changed.
+accountRouter.post('/users/:id/role', requireAdmin, requireSelfOrAdmin, async (req, res) => {
   const user = req.targetUser!;
   const parsed = updateRoleSchema.safeParse(req.body);
   if (!parsed.success) return res.redirect(`/users/${user.id}`);

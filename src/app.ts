@@ -15,7 +15,8 @@ import { favoritesRouter } from './routes/favorites.js';
 import { accountRouter } from './routes/account.js';
 import { adminRouter } from './routes/admin.js';
 import { importRouter } from './routes/import.js';
-import { canUseImportPage } from './lib/visibility.js';
+import { canViewSetting } from './lib/visibility.js';
+import { importPageSetting, type Viewer } from './config/company-attributes.js';
 import { SITE_NAME, PASSWORD_MIN_LENGTH, DISPLAY_NAME_MAX_LENGTH } from './config/site.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -47,16 +48,16 @@ const nunjucksEnv = nunjucks.configure(`${import.meta.dirname}/views`, {
 });
 app.set('view engine', 'njk');
 
-// Dates are shown as YYYY-MM-DD. In UTC on purpose: dates entered as a day (like
-// a review's process date) are stored as UTC midnight, so formatting them in the
-// server's local time zone could show the day before.
 // Site-wide settings the templates use (see src/config/site.ts).
 nunjucksEnv.addGlobal('siteName', SITE_NAME);
 nunjucksEnv.addGlobal('passwordMinLength', PASSWORD_MIN_LENGTH);
 nunjucksEnv.addGlobal('displayNameMaxLength', DISPLAY_NAME_MAX_LENGTH);
 // For the nav's Import link: the same check the Import page itself makes.
-nunjucksEnv.addGlobal('canUseImportPage', canUseImportPage);
+nunjucksEnv.addGlobal('canUseImportPage', (viewer: Viewer) => canViewSetting(importPageSetting, viewer));
 
+// Dates are shown as YYYY-MM-DD. In UTC on purpose: dates entered as a day (like
+// a review's process date) are stored as UTC midnight, so formatting them in the
+// server's local time zone could show the day before.
 nunjucksEnv.addFilter('isoDate', (date: Date) => date.toISOString().slice(0, 10));
 
 nunjucksEnv.addFilter('urlWithPage', (query: Record<string, unknown>, page: number) => {

@@ -12,11 +12,9 @@ import {
 } from '../lib/regions.js';
 import { pageLinks } from '../lib/pagination.js';
 import {
-  companyAttributes, reviewReports, type ReviewReportDef, MASKED_NAME,
+  companyAttributes, reviewReports, reviewsSetting, companyNotesSetting, type ReviewReportDef, MASKED_NAME,
 } from '../config/company-attributes.js';
-import {
-  visibleAttributes, visibleReviewReports, reviewVisibility, canViewReviews, companyNotesVisibility, canViewCompanyNotes,
-} from '../lib/visibility.js';
+import { visibleAttributes, visibleReviewReports, visibilityOf, canViewSetting } from '../lib/visibility.js';
 
 export const companiesRouter = Router();
 
@@ -95,7 +93,7 @@ async function loadCompanyMeta(companyIds: number[], viewer: CurrentUser | undef
   for (const row of statRows) {
     const entry = meta.get(row.companyId);
     if (!entry) continue;
-    if (canViewReviews(viewer) && row.avgRating !== null) {
+    if (canViewSetting(reviewsSetting, viewer) && row.avgRating !== null) {
       entry.avgRating = row.avgRating / 2; // stored in half-star units
       entry.ratingCount = row.ratingCount;
     }
@@ -174,7 +172,7 @@ companiesRouter.get('/', async (req, res) => {
 
   // Alphabetical A–Z unless chosen otherwise. Only viewers who can see ratings
   // can sort by them — the order would give them away.
-  const canSeeReviews = canViewReviews(viewer);
+  const canSeeReviews = canViewSetting(reviewsSetting, viewer);
   const sort = req.query.sort === 'updated' ? 'updated'
     : (req.query.sort === 'rating' || req.query.sort === 'ratingCount') && canSeeReviews ? req.query.sort
     : 'name';
@@ -270,7 +268,7 @@ async function renderCompanyForm(
     allIndustries: await db.select().from(industries),
     employeeSizes: employeeSizeRanges,
     attributes: visibleAttributes(editor),
-    notesVisibility: canViewCompanyNotes(editor) ? companyNotesVisibility() : null,
+    notesVisibility: canViewSetting(companyNotesSetting, editor) ? visibilityOf(companyNotesSetting) : null,
   });
 }
 
@@ -298,7 +296,7 @@ function parseCompanyForm(body: unknown, editor: CurrentUser) {
   const attributes = Object.fromEntries(
     visibleAttributes(editor).map((a) => [a.key, attributeValues[a.key]]),
   ) as Partial<typeof attributeValues>;
-  const notes = canViewCompanyNotes(editor) ? { generalNotes: generalNotes || null } : {};
+  const notes = canViewSetting(companyNotesSetting, editor) ? { generalNotes: generalNotes || null } : {};
 
   return {
     ok: true as const,
@@ -426,7 +424,7 @@ companiesRouter.get('/companies/:id', async (req, res) => {
   // Reviews follow their visibility setting. Reviewers' names are for
   // signed-in users only: anyone else gets MASKED_NAME, decided here so the
   // names never reach their page at all.
-  const canSeeReviews = canViewReviews(viewer);
+  const canSeeReviews = canViewSetting(reviewsSetting, viewer);
   const companyReviews = canSeeReviews
     ? (await db.query.reviews.findMany({
       where: eq(reviews.companyId, id),
@@ -447,8 +445,8 @@ companiesRouter.get('/companies/:id', async (req, res) => {
     updatedByUser,
     isAuthed,
     canSeeReviews,
-    canSeeNotes: canViewCompanyNotes(viewer),
-    reviewVisibility: reviewVisibility(),
+    canSeeNotes: canViewSetting(companyNotesSetting, viewer),
+    reviewVisibility: visibilityOf(reviewsSetting),
     reviews: companyReviews,
     myReview: companyReviews.find((r) => r.userId === viewer?.id),
     today: new Date().toISOString().slice(0, 10),

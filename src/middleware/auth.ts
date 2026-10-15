@@ -2,6 +2,7 @@ import type { Request, Response, NextFunction } from 'express';
 import { eq } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { users, reviews } from '../db/schema.js';
+import { canView, isAdmin, type Visibility } from '../config/company-attributes.js';
 
 export type CurrentUser = typeof users.$inferSelect;
 export type Review = typeof reviews.$inferSelect;
@@ -29,16 +30,22 @@ export async function attachUser(req: Request, res: Response, next: NextFunction
   next();
 }
 
-export function requireAuth(req: Request, res: Response, next: NextFunction) {
-  if (!req.currentUser) return res.redirect('/login');
-  next();
+/** Lets through only the signed-in users a visibility level admits ('user' or
+ * 'admin'): anyone signed out goes to the login page, anyone else gets a 403.
+ * Pass a function for a level that's an admin setting, so each request reads
+ * the current one. */
+export function requireLevel(level: Visibility | (() => Visibility)) {
+  return (req: Request, res: Response, next: NextFunction) => {
+    if (!req.currentUser) return res.redirect('/login');
+    if (!canView(typeof level === 'function' ? level() : level, req.currentUser)) {
+      return res.status(403).render('errors/403');
+    }
+    next();
+  };
 }
 
-export function requireAdmin(req: Request, res: Response, next: NextFunction) {
-  if (!req.currentUser) return res.redirect('/login');
-  if (req.currentUser.role !== 'admin') return res.status(403).render('errors/403');
-  next();
-}
+export const requireAuth = requireLevel('user');
+export const requireAdmin = requireLevel('admin');
 
 /** Must be the user identified by the :id param, or an admin acting on anyone's
  * behalf — this is what lets /users/:id serve both a user's own account page and
@@ -47,7 +54,7 @@ export function requireAdmin(req: Request, res: Response, next: NextFunction) {
 export async function requireSelfOrAdmin(req: Request, res: Response, next: NextFunction) {
   if (!req.currentUser) return res.redirect('/login');
   const targetId = Number(req.params.id);
-  if (req.currentUser.id !== targetId && req.currentUser.role !== 'admin') {
+  if (req.currentUser.id !== targetId && !isAdmin(req.currentUser)) {
     return res.status(403).render('errors/403');
   }
   const target = await db.query.users.findFirst({ where: eq(users.id, targetId) });
@@ -64,7 +71,7 @@ export async function requireReviewOwnerOrAdmin(req: Request, res: Response, nex
   const reviewId = Number(req.params.reviewId);
   const review = await db.query.reviews.findFirst({ where: eq(reviews.id, reviewId) });
   if (!review) return res.status(404).render('errors/404');
-  if (review.userId !== req.currentUser.id && req.currentUser.role !== 'admin') {
+  if (review.userId !== req.currentUser.id && !isAdmin(req.currentUser)) {
     return res.status(403).render('errors/403');
   }
   req.review = review;

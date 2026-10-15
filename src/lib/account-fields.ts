@@ -1,5 +1,6 @@
 import { z } from 'zod';
 import { PASSWORD_MIN_LENGTH, DISPLAY_NAME_MAX_LENGTH } from '../config/site.js';
+import { users } from '../db/schema.js';
 
 // The rules for the fields every account form shares — login, invites, invite
 // sign-up, password reset, the account page, Add user, and the create-admin
@@ -16,3 +17,6 @@ export const displayNameField = z.string().trim()
 /** Lowercased, so capitalization never matters: "Alice@Example.com" signs in to
  * the same account as "alice@example.com". Every email is stored this way too. */
 export const emailField = z.string().trim().toLowerCase().email('Enter a valid email');
+
+/** One of the roles a user can have (see users.role in src/db/schema.ts). */
+export const roleField = z.enum(users.role.enumValues);
