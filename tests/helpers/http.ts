@@ -29,6 +29,7 @@ export async function startServer(): Promise<{ baseUrl: string; close: () => Pro
 export interface TestResponse {
   status: number;
   location: string | null;
+  headers: Headers;
   text: string;
 }
 
@@ -83,7 +84,7 @@ export class TestClient {
     for (const c of res.headers.getSetCookie()) {
       if (c.startsWith('connect.sid=')) this.cookie = c.split(';')[0];
     }
-    return { status: res.status, location: res.headers.get('location'), text: await res.text() };
+    return { status: res.status, location: res.headers.get('location'), headers: res.headers, text: await res.text() };
   }
 }
 

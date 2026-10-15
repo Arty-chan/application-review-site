@@ -13,6 +13,7 @@
     <div class="nav-links">
       {% if currentUser %}
         <a href="/companies/new">Add company</a>
+        {% if canUseImportPage(currentUser) %}<a href="/import">Import</a>{% endif %}
         <a href="/account/favorites">Favorites</a>
         <a href="/account/reviews">My reviews</a>
         <a href="/invites">Invite</a>

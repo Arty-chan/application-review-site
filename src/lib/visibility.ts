@@ -1,7 +1,7 @@
 import { db, transaction } from '../db/client.js';
 import { visibilitySettings } from '../db/schema.js';
 import {
-  canView, companyAttributes, reviewReports, reviewsSetting, companyNotesSetting,
+  canView, companyAttributes, reviewReports, reviewsSetting, companyNotesSetting, importPageSetting,
   type CompanyAttributeDef, type ReviewReportDef, type Visibility, type Viewer, type VisibilitySettingDef,
 } from '../config/company-attributes.js';
 
@@ -29,6 +29,10 @@ export const visibilityGroups: { name: string; note?: string; settings: Visibili
     name: 'Company attributes',
     note: 'The value on companies and search results, the search filter, and who can see and change it on the company form.',
     settings: companyAttributes,
+  },
+  {
+    name: 'Pages',
+    settings: [importPageSetting],
   },
 ];
 
@@ -75,4 +79,8 @@ export function companyNotesVisibility(): Visibility {
 
 export function canViewCompanyNotes(viewer: Viewer): boolean {
   return canView(companyNotesVisibility(), viewer);
+}
+
+export function canUseImportPage(viewer: Viewer): boolean {
+  return canView(currentVisibility().get(importPageSetting.key)!, viewer);
 }

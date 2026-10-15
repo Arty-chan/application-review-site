@@ -14,6 +14,8 @@ import { reviewsRouter } from './routes/reviews.js';
 import { favoritesRouter } from './routes/favorites.js';
 import { accountRouter } from './routes/account.js';
 import { adminRouter } from './routes/admin.js';
+import { importRouter } from './routes/import.js';
+import { canUseImportPage } from './lib/visibility.js';
 import { SITE_NAME, PASSWORD_MIN_LENGTH, DISPLAY_NAME_MAX_LENGTH } from './config/site.js';
 
 const isProduction = process.env.NODE_ENV === 'production';
@@ -52,6 +54,8 @@ app.set('view engine', 'njk');
 nunjucksEnv.addGlobal('siteName', SITE_NAME);
 nunjucksEnv.addGlobal('passwordMinLength', PASSWORD_MIN_LENGTH);
 nunjucksEnv.addGlobal('displayNameMaxLength', DISPLAY_NAME_MAX_LENGTH);
+// For the nav's Import link: the same check the Import page itself makes.
+nunjucksEnv.addGlobal('canUseImportPage', canUseImportPage);
 
 nunjucksEnv.addFilter('isoDate', (date: Date) => date.toISOString().slice(0, 10));
 
@@ -72,7 +76,7 @@ nunjucksEnv.addFilter('urlWithPage', (query: Record<string, unknown>, page: numb
 app.use(helmet());
 // The CSV import posts a whole spreadsheet as one field, so it gets more than the
 // default 100kb. Mounted first: the general parser below skips an already-read body.
-app.use('/admin/import', express.urlencoded({ extended: true, limit: '1mb' }));
+app.use('/import', express.urlencoded({ extended: true, limit: '1mb' }));
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static(`${import.meta.dirname}/../public`));
 
@@ -106,6 +110,7 @@ app.use(reviewsRouter);
 app.use(favoritesRouter);
 app.use(accountRouter);
 app.use(adminRouter);
+app.use(importRouter);
 
 app.get('/healthz', (_req, res) => {
   res.json({ ok: true });

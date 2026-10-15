@@ -80,7 +80,7 @@
         <label class="setting-row">
           <span>{{ setting.label }}{% if setting.helpText %} {{ m.infoTip(setting.helpText) }}{% endif %}</span>
           <select name="{{ setting.key }}" class="input">
-            {% for level in visibilityLevels %}
+            {% for level in setting.options %}
               <option value="{{ level.value }}" {% if setting.visibility == level.value %}selected{% endif %}>{{ level.label }}</option>
             {% endfor %}
           </select>
@@ -89,60 +89,6 @@
     {% endfor %}
     <button class="btn" type="submit">Save settings</button>
   </form>
-</div>
-
-<div class="card" id="import">
-  <h3>Import companies</h3>
-  {% if csvImport.results %}
-    <p>Added {{ csvImport.results | selectattr('ok') | length }} of {{ csvImport.results.length }}.</p>
-    <ul>
-      {% for result in csvImport.results %}
-        <li>
-          {% if result.ok %}
-            <a href="/companies/{{ result.id }}">{{ result.name }}</a> — added
-          {% else %}
-            {{ result.name }} — <span class="error">{{ result.error }}</span>
-          {% endif %}
-        </li>
-      {% endfor %}
-    </ul>
-    <p><a href="/admin#import">Import more</a></p>
-  {% else %}
-    <p>
-      Paste CSV below: a header row naming the columns, then one company per row.
-      Only <code>name</code> and <code>websiteUrl</code> are required — leave out any
-      other column, or leave its cells blank. Columns can be in any order.
-    </p>
-
-    <details>
-      <summary>Columns, and an example</summary>
-      <table>
-        <thead><tr><th>Column</th><th>Accepts</th></tr></thead>
-        <tbody>
-          {% for column in importColumns %}
-            <tr><td><code>{{ column.name }}</code></td><td>{{ column.description }}</td></tr>
-          {% endfor %}
-        </tbody>
-      </table>
-
-      <p>Every column, ready to copy as a header row:</p>
-      <pre>{{ importHeaderRow }}</pre>
-
-      <p>For example — a value containing a comma needs double quotes around it:</p>
-      <pre>name,websiteUrl,location,industry,hiresRemote
-Acme,acme.com,Germany,Software &amp; Technology,yes
-"Globex, Inc.",globex.com,EMEA,,no</pre>
-    </details>
-
-    {% if csvImport.error %}<p class="error">{{ csvImport.error }}</p>{% endif %}
-    <form method="post" action="/admin/import#import">
-      <input type="hidden" name="_csrf" value="{{ csrfToken }}">
-      <label>CSV
-        <textarea class="input" name="csv" rows="12" required>{{ csvImport.csv }}</textarea>
-      </label>
-      <button class="btn" type="submit">Import</button>
-    </form>
-  {% endif %}
 </div>
 
 {% endblock %}

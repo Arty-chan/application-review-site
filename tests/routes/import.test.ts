@@ -4,6 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../src/db/client.js';
 import { companies, companyCountries, companyIndustries, industries } from '../../src/db/schema.js';
 import { startServer, TestClient, createUser, seedReferenceData, TEST_PASSWORD } from '../helpers/http.js';
+import { saveVisibility } from '../../src/lib/visibility.js';
 
 let baseUrl: string;
 let close: () => Promise<void>;
@@ -39,16 +40,30 @@ async function findCompany(name: string) {
 
 describe('importing companies from CSV', () => {
   test('admins are shown the columns to use before pasting', async () => {
-    const page = await admin.get('/admin');
+    const page = await admin.get('/import');
     assert.equal(page.status, 200);
     for (const column of ['name', 'websiteUrl', 'location', 'industry', 'postsGhostJobs']) {
       assert.ok(page.text.includes(`<code>${column}</code>`), `should list the ${column} column`);
     }
   });
 
-  test('only admins can import', async () => {
-    assert.equal((await member.get('/admin')).status, 403);
-    assert.equal((await member.post('/admin/import', { csv: 'name,websiteUrl\nSneaky,sneaky.com' })).status, 403);
+  test('only admins can import, by default', async () => {
+    assert.equal((await member.get('/import')).status, 403);
+    assert.equal((await member.post('/import', { csv: 'name,websiteUrl\nSneaky,sneaky.com' })).status, 403);
+    assert.doesNotMatch((await member.get('/')).text, /href="\/import"/, 'no Import link in the nav');
+  });
+
+  test('an admin setting opens it to every signed-in member', async () => {
+    saveVisibility({ importPage: 'user' });
+    try {
+      const page = await member.get('/import');
+      assert.equal(page.status, 200);
+      assert.doesNotMatch(page.text, /Export companies/, 'exporting stays admins only');
+      assert.match((await member.get('/')).text, /href="\/import"/, 'the nav links to it');
+      assert.equal((await new TestClient(baseUrl).get('/import')).location, '/login');
+    } finally {
+      saveVisibility({ importPage: 'admin' });
+    }
   });
 
   test('each row is added, or listed with the reason it failed', async () => {
@@ -59,7 +74,7 @@ describe('importing companies from CSV', () => {
       'Umbrella,umbrella.com,,,,',
       'Initech,initech.com,Atlantis,,,',
     ].join('\n');
-    const res = await admin.post('/admin/import', { csv });
+    const res = await admin.post('/import', { csv });
     assert.equal(res.status, 200);
     assert.match(res.text, /Added 3 of 4\./);
 
@@ -83,9 +98,35 @@ describe('importing companies from CSV', () => {
   });
 
   test('a header row with an unknown column is rejected before anything is imported', async () => {
-    const res = await admin.post('/admin/import', { csv: 'name,website\nHooli,hooli.com' });
+    const res = await admin.post('/import', { csv: 'name,website\nHooli,hooli.com' });
     assert.equal(res.status, 400);
     assert.match(res.text, /recognized: website/);
     assert.equal(await findCompany('Hooli'), undefined);
+  });
+});
+
+describe('exporting companies as CSV', () => {
+  test('admins download every company, in the import columns', async () => {
+    await admin.post('/import', {
+      csv: 'name,websiteUrl,location,listsSalary,generalNotes\n"Export, Inc.",export.com,US,yes,"A ""quoted"" word"',
+    });
+    const res = await admin.get('/import/export.csv');
+    assert.equal(res.status, 200);
+    assert.match(res.headers.get('content-disposition') ?? '', /attachment; filename="companies.csv"/);
+
+    const [header, ...rows] = res.text.replace(/^\uFEFF/, '').trim().split('\n');
+    assert.ok(header.startsWith('name,websiteUrl,careersUrl,employeeSizeRange,location,industry,generalNotes,'));
+    const row = rows.find((r) => r.startsWith('"Export, Inc."'));
+    assert.ok(row, 'a name with a comma is quoted');
+    assert.ok(row.startsWith('"Export, Inc.",https://export.com,,,US,,"A ""quoted"" word",'), 'quotes inside a value are doubled');
+  });
+
+  test('members cannot export, even when they can import', async () => {
+    saveVisibility({ importPage: 'user' });
+    try {
+      assert.equal((await member.get('/import/export.csv')).status, 403);
+    } finally {
+      saveVisibility({ importPage: 'admin' });
+    }
   });
 });

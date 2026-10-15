@@ -34,7 +34,7 @@ describe('the Admin page', () => {
   test('has a section for each admin tool', async () => {
     const page = await admin.get('/admin');
     assert.equal(page.status, 200);
-    for (const id of ['flags', 'add-user', 'settings', 'import']) {
+    for (const id of ['flags', 'add-user', 'settings']) {
       assert.ok(page.text.includes(`id="${id}"`), `should have the ${id} section`);
     }
   });

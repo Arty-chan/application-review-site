@@ -13,10 +13,11 @@ lines of vanilla JS), deployed as a single Docker container behind Caddy.
 Functionally complete for a first local run-through: auth (invite-only
 registration, login, password reset), companies (add/edit/search/filter/sort),
 reviews (add/edit/delete/flag), favorites, account management (self-service
-and admin-on-behalf-of), and an Admin page (`/admin`) for flag moderation,
-adding users, choosing who can see what, and bulk import of companies from
-pasted CSV are all built and have been exercised end to end against a real
-database.
+and admin-on-behalf-of), an Admin page (`/admin`) for flag moderation, adding
+users and choosing who can see what, and an Import page (`/import`) for adding
+companies from pasted CSV (admins only unless the Admin page opens it to all
+members) and exporting them as CSV (admins only) are all built and have been
+exercised end to end against a real database.
 
 ### Known gaps
 
