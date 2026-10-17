@@ -37,7 +37,9 @@
           { "code": "KN", "name": "Saint Kitts and Nevis" },
           { "code": "LC", "name": "Saint Lucia" },
           { "code": "VC", "name": "Saint Vincent and the Grenadines" },
-          { "code": "TT", "name": "Trinidad and Tobago" }
+          { "code": "TT", "name": "Trinidad and Tobago" },
+          { "code": "BM", "name": "Bermuda" },
+          { "code": "PR", "name": "Puerto Rico" }
         ]
       },
       {
@@ -116,6 +118,8 @@
               { "code": "RU", "name": "Russia" },
               { "code": "SM", "name": "San Marino" },
               { "code": "RS", "name": "Serbia" },
+              { "code": "XK", "name": "Kosovo" },
+              { "code": "GL", "name": "Greenland" },
               { "code": "UA", "name": "Ukraine" },
               { "code": "AM", "name": "Armenia" },
               { "code": "AZ", "name": "Azerbaijan" },
@@ -140,7 +144,8 @@
           { "code": "LB", "name": "Lebanon" },
           { "code": "OM", "name": "Oman" },
           { "code": "SY", "name": "Syria" },
-          { "code": "YE", "name": "Yemen" }
+          { "code": "YE", "name": "Yemen" },
+          { "code": "PS", "name": "Palestine" }
         ]
       },
       {
@@ -215,6 +220,7 @@
           { "code": "CN", "name": "China" },
           { "code": "TW", "name": "Taiwan" },
           { "code": "HK", "name": "Hong Kong" },
+          { "code": "MO", "name": "Macau" },
           { "code": "MN", "name": "Mongolia" },
           { "code": "KP", "name": "North Korea" }
         ]

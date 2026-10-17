@@ -126,7 +126,7 @@ each one (see `tests/routes/reviews.test.ts`).
 | `npm start` | Run the compiled build (what the Docker image does) |
 | `npm run typecheck` | Type-check `src/`, `tests/` and `scripts/` |
 | `npm test` | Run the automated test suite |
-| `npm run seed` | Make regions/countries match `scripts/data/regions.json` exactly (adds, moves, removes) and add any missing industries from `industries.json`. Safe to rerun after editing either file; it won't remove a country a company still lists. |
+| `npm run seed` | Make regions/countries match `scripts/data/regions.json` exactly (adds, moves, removes) and add any missing industries from `industries.json`. Safe to rerun after editing either file; it won't remove a country a company still lists. A newly added country is also added to every company that lists all the other countries in its region (including companies that hire anywhere). |
 | `npm run create-admin -- <email> <password> "<name>"` | Bootstrap the first admin account |
 | `npm run db:generate` | Diff `src/db/schema.ts` against the last migration and write a new one |
 | `npm run db:migrate` | Apply any unapplied migrations to the database |
@@ -284,6 +284,13 @@ cp -a data "data-backup-$(date +%F)"
 docker compose run --rm application-review-site npx drizzle-kit migrate
 docker compose up -d application-review-site
 curl http://127.0.0.1:6559/healthz
+```
+
+If the update changes the region list (`scripts/data/regions.json`), apply it
+afterwards:
+
+```bash
+docker compose exec application-review-site npm run seed
 ```
 
 If something goes wrong, the backup folder is a full copy of `data/`: stop the
