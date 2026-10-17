@@ -2,7 +2,7 @@ import { test, describe, before, after } from 'node:test';
 import assert from 'node:assert/strict';
 import { eq } from 'drizzle-orm';
 import { db } from '../../src/db/client.js';
-import { companies, reviews } from '../../src/db/schema.js';
+import { companies, reviews, industries, companyIndustries } from '../../src/db/schema.js';
 import { currentVisibility } from '../../src/lib/visibility.js';
 import { startServer, TestClient, createUser, TEST_PASSWORD } from '../helpers/http.js';
 
@@ -34,7 +34,7 @@ describe('the Admin page', () => {
   test('has a section for each admin tool', async () => {
     const page = await admin.get('/admin');
     assert.equal(page.status, 200);
-    for (const id of ['flags', 'add-user', 'settings']) {
+    for (const id of ['flags', 'add-user', 'settings', 'industries']) {
       assert.ok(page.text.includes(`id="${id}"`), `should have the ${id} section`);
     }
   });
@@ -106,5 +106,68 @@ describe('company notes', () => {
     } finally {
       await admin.post('/admin/settings', settingsForm({ generalNotes: 'user' }));
     }
+  });
+});
+
+describe('industries', () => {
+  let counter = 0;
+  async function companyIn(...industryIds: number[]) {
+    counter += 1;
+    const [company] = await db.insert(companies).values({
+      name: `Industry Co ${counter}`, websiteUrl: `https://industry-${counter}.example`, websiteDomain: `industry-${counter}.example`, updatedAt: new Date(),
+    }).returning();
+    if (industryIds.length) await db.insert(companyIndustries).values(industryIds.map((industryId) => ({ companyId: company.id, industryId })));
+    return company;
+  }
+  const industriesOf = async (companyId: number) =>
+    (await db.select().from(companyIndustries).where(eq(companyIndustries.companyId, companyId))).map((l) => l.industryId);
+
+  test('the Admin page lists each industry with how many companies use it', async () => {
+    const [mining] = await db.insert(industries).values({ name: 'Mining' }).returning();
+    await companyIn(mining.id);
+    await companyIn(mining.id);
+    assert.match((await admin.get('/admin')).text, /value="Mining"[\s\S]*?<td>2<\/td>/);
+  });
+
+  test("renaming works, but not to another industry's name in different capitals", async () => {
+    const [typo] = await db.insert(industries).values({ name: 'Agricultre' }).returning();
+    await db.insert(industries).values({ name: 'Forestry' });
+    await admin.post('/admin/industries', { action: 'rename', id: String(typo.id), name: 'Agriculture' });
+    assert.equal((await db.query.industries.findFirst({ where: eq(industries.id, typo.id) }))?.name, 'Agriculture');
+
+    const res = await admin.post('/admin/industries', { action: 'rename', id: String(typo.id), name: 'FORESTRY' });
+    assert.equal(res.status, 400);
+    assert.match(res.text, /already exists/);
+  });
+
+  test("merging moves the industry's companies to the other one, and removes it", async () => {
+    const [fintech] = await db.insert(industries).values({ name: 'Fintech' }).returning();
+    const [finance] = await db.insert(industries).values({ name: 'Finance Co' }).returning();
+    const onlyFintech = await companyIn(fintech.id);
+    const both = await companyIn(fintech.id, finance.id);
+
+    await admin.post('/admin/industries', { action: 'merge', id: String(fintech.id), into: String(finance.id) });
+    assert.deepEqual(await industriesOf(onlyFintech.id), [finance.id]);
+    assert.deepEqual(await industriesOf(both.id), [finance.id], 'listed once, not twice');
+    assert.equal(await db.query.industries.findFirst({ where: eq(industries.id, fintech.id) }), undefined);
+  });
+
+  test('only an industry no company uses can be deleted', async () => {
+    const [unused] = await db.insert(industries).values({ name: 'Unused' }).returning();
+    const [used] = await db.insert(industries).values({ name: 'Used' }).returning();
+    await companyIn(used.id);
+
+    await admin.post('/admin/industries', { action: 'delete', id: String(unused.id) });
+    assert.equal(await db.query.industries.findFirst({ where: eq(industries.id, unused.id) }), undefined);
+
+    const res = await admin.post('/admin/industries', { action: 'delete', id: String(used.id) });
+    assert.equal(res.status, 400);
+    assert.ok(await db.query.industries.findFirst({ where: eq(industries.id, used.id) }));
+  });
+
+  test('regular users cannot change industries', async () => {
+    const [kept] = await db.insert(industries).values({ name: 'Kept' }).returning();
+    assert.equal((await member.post('/admin/industries', { action: 'delete', id: String(kept.id) })).status, 403);
+    assert.ok(await db.query.industries.findFirst({ where: eq(industries.id, kept.id) }));
   });
 });

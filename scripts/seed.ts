@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { eq, and, isNull, inArray, notInArray } from 'drizzle-orm';
 import { transaction, type Transaction } from '../src/db/client.js';
 import { regions, countries, companyCountries, industries } from '../src/db/schema.js';
+import { findIndustryByName } from '../src/lib/industries.js';
 
 // Makes the database's regions and countries match scripts/data/regions.json
 // exactly — adding, moving, renaming and removing — so it's safe to rerun after
@@ -111,7 +112,7 @@ try {
     }
 
     for (const name of industryNames) {
-      tx.insert(industries).values({ name }).onConflictDoNothing().run();
+      if (!findIndustryByName(name, tx)) tx.insert(industries).values({ name }).run();
     }
 
     return { removedCodes, removedRegions, added, linksAdded, firstSeed: codesBefore.size === 0 };

@@ -11,6 +11,7 @@ import {
   getRegionTree, descendantCountryCodes, groupCountriesByRegion, summarizeCountryGroups, type RegionTreeNode,
 } from '../lib/regions.js';
 import { pageLinks } from '../lib/pagination.js';
+import { findIndustryByName, industryNameOrder, INDUSTRY_NAME_MAX_LENGTH } from '../lib/industries.js';
 import {
   companyAttributes, reviewReports, reviewsSetting, companyNotesSetting, type ReviewReportDef, MASKED_NAME,
 } from '../config/company-attributes.js';
@@ -70,7 +71,8 @@ async function loadCompanyMeta(companyIds: number[], viewer: CurrentUser | undef
     name: industries.name,
   }).from(companyIndustries)
     .innerJoin(industries, eq(companyIndustries.industryId, industries.id))
-    .where(inArray(companyIndustries.companyId, companyIds));
+    .where(inArray(companyIndustries.companyId, companyIds))
+    .orderBy(industryNameOrder);
   for (const row of industryRows) {
     meta.get(row.companyId)?.industries.push({ id: row.id, name: row.name });
   }
@@ -211,7 +213,7 @@ companiesRouter.get('/', async (req, res) => {
     totalPages,
     pages: pageLinks(page, totalPages),
     regionTree,
-    allIndustries: await db.select().from(industries),
+    allIndustries: await db.select().from(industries).orderBy(industryNameOrder),
     employeeSizes: employeeSizeRanges,
     attributes,
     requireFilters: attributes.filter((a) => a.filter === 'require'),
@@ -253,7 +255,7 @@ const companyFormSchema = z.object({
   postsGhostJobs: triState,
   countries: stringOrArray,
   industries: stringOrArray,
-  newIndustry: z.string().trim().max(60).optional(),
+  newIndustry: z.string().trim().max(INDUSTRY_NAME_MAX_LENGTH).optional(),
 }).strict();
 
 /** The form only offers the attributes (and notes) its editor is allowed to see. */
@@ -265,7 +267,7 @@ async function renderCompanyForm(
   res.status(opts.error ? 400 : 200).render('companies/form', {
     ...opts,
     regionTree: await getRegionTree(),
-    allIndustries: await db.select().from(industries),
+    allIndustries: await db.select().from(industries).orderBy(industryNameOrder),
     employeeSizes: employeeSizeRanges,
     attributes: visibleAttributes(editor),
     notesVisibility: canViewSetting(companyNotesSetting, editor) ? visibilityOf(companyNotesSetting) : null,
@@ -333,9 +335,9 @@ export function saveCompany(body: unknown, editor: CurrentUser, companyId?: numb
 
     const industryIds = [...form.industryIds];
     if (form.newIndustry) {
-      const row = tx.insert(industries).values({ name: form.newIndustry })
-        .onConflictDoUpdate({ target: industries.name, set: { name: form.newIndustry } })
-        .returning().get();
+      // An existing industry in other capitals is the same one.
+      const row = findIndustryByName(form.newIndustry, tx)
+        ?? tx.insert(industries).values({ name: form.newIndustry }).returning().get();
       industryIds.push(row.id);
     }
 

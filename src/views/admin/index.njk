@@ -91,4 +91,53 @@
   </form>
 </div>
 
+<div class="card" id="industries">
+  <h3>Industries</h3>
+  <p class="note">
+    Rename an industry, merge it into another (its companies move there and it's
+    removed), or delete it if no company uses it.
+  </p>
+  {% if industryError %}<p class="error">{{ industryError }}</p>{% endif %}
+  <div class="table-scroll">
+    <table class="industry-table">
+      <thead><tr><th>Industry</th><th>Companies</th><th>Merge into</th><th></th></tr></thead>
+      <tbody>
+        {% for industry in industries %}
+          <tr>
+            <td>
+              <form method="post" action="/admin/industries#industries">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                <input type="hidden" name="id" value="{{ industry.id }}">
+                <input class="input" type="text" name="name" value="{{ industry.name }}" required maxlength="60" aria-label="Name for {{ industry.name }}">
+                <button class="btn btn-secondary" type="submit" name="action" value="rename">Rename</button>
+              </form>
+            </td>
+            <td>{{ industry.companyCount }}</td>
+            <td>
+              <form method="post" action="/admin/industries#industries" data-confirm="Move every company in {{ industry.name }} to the industry you chose, and remove {{ industry.name }}?">
+                <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                <input type="hidden" name="id" value="{{ industry.id }}">
+                <select class="input" name="into" required aria-label="Industry to merge {{ industry.name }} into">
+                  <option value="">Choose…</option>
+                  {% for other in industries %}{% if other.id != industry.id %}<option value="{{ other.id }}">{{ other.name }}</option>{% endif %}{% endfor %}
+                </select>
+                <button class="btn btn-secondary" type="submit" name="action" value="merge">Merge</button>
+              </form>
+            </td>
+            <td>
+              {% if industry.companyCount == 0 %}
+                <form method="post" action="/admin/industries#industries" data-confirm="Delete {{ industry.name }}?">
+                  <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+                  <input type="hidden" name="id" value="{{ industry.id }}">
+                  <button class="btn-link" type="submit" name="action" value="delete">Delete</button>
+                </form>
+              {% endif %}
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
 {% endblock %}

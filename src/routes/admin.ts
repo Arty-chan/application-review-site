@@ -8,6 +8,9 @@ import { hashPassword } from '../lib/passwords.js';
 import { newPasswordField, displayNameField, emailField, roleField } from '../lib/account-fields.js';
 import { visibilityGroups, currentVisibility, saveVisibility } from '../lib/visibility.js';
 import { visibilityLevels, type VisibilitySettingDef } from '../config/company-attributes.js';
+import {
+  industryNameField, industriesWithCounts, renameIndustry, mergeIndustry, deleteIndustry,
+} from '../lib/industries.js';
 
 export const adminRouter = Router();
 
@@ -21,14 +24,15 @@ adminRouter.post('/companies/:id/delete', requireAdmin, async (req, res) => {
 // ---------- The Admin page ----------
 //
 // One page with a section for each admin tool, stacked like the account page:
-// flags, adding a user, and who can see what. Each section's
-// form posts to its own route below, which shows the page again with that
-// section's outcome (the form's action ends in the section's #id, so the
-// browser scrolls back to it).
+// flags, adding a user, who can see what, and industries. Each section's form
+// posts to its own route below, which shows the page again with that section's
+// outcome (the form's action ends in the section's #id, so the browser scrolls
+// back to it).
 
 interface SectionOutcomes {
   addUser?: { error: string; values: Record<string, unknown> };
   settings?: { message?: string; error?: string };
+  industryError?: string;
 }
 
 /** The visibility levels the Admin page offers for a setting. */
@@ -53,6 +57,7 @@ async function renderAdminPage(res: Response, outcomes: SectionOutcomes = {}, st
       ...group,
       settings: group.settings.map((s) => ({ ...s, visibility: visibility.get(s.key), options: levelsFor(s) })),
     })),
+    industries: industriesWithCounts(),
     addUser: { values: { role: 'user' } },
     ...outcomes,
   });
@@ -69,6 +74,7 @@ const sectionUrls: Record<string, string> = {
   '/admin/flags': 'flags',
   '/admin/users/new': 'add-user',
   '/admin/settings': 'settings',
+  '/admin/industries': 'industries',
 };
 adminRouter.get(Object.keys(sectionUrls), requireAdmin, (req, res) => {
   res.redirect(`/admin#${sectionUrls[req.path]}`);
@@ -123,4 +129,25 @@ adminRouter.post('/admin/settings', requireAdmin, async (req, res) => {
   if (!parsed.success) return renderAdminPage(res, { settings: { error: 'Choose who can see each setting.' } }, 400);
   saveVisibility(parsed.data);
   await renderAdminPage(res, { settings: { message: 'Settings saved.' } });
+});
+
+// Each industry's row has a form per action; its button says which one.
+const industryId = z.coerce.number().int();
+const industryActionSchema = z.discriminatedUnion('action', [
+  z.object({ action: z.literal('rename'), id: industryId, name: industryNameField }).strict(),
+  z.object({ action: z.literal('merge'), id: industryId, into: industryId }).strict(),
+  z.object({ action: z.literal('delete'), id: industryId }).strict(),
+]);
+
+adminRouter.post('/admin/industries', requireAdmin, async (req, res) => {
+  const parsed = industryActionSchema.safeParse(req.body);
+  if (!parsed.success) {
+    return renderAdminPage(res, { industryError: parsed.error.issues[0]?.message ?? 'Invalid submission.' }, 400);
+  }
+  const action = parsed.data;
+  const error = action.action === 'rename' ? renameIndustry(action.id, action.name)
+    : action.action === 'merge' ? mergeIndustry(action.id, action.into)
+    : deleteIndustry(action.id);
+  if (error) return renderAdminPage(res, { industryError: error }, 400);
+  res.redirect('/admin#industries');
 });

@@ -87,6 +87,10 @@ describe('adding and editing companies', () => {
 
     assert.match((await client.get(`/companies/${id}`)).text, /Robotics/);
     assert.ok(await db.query.industries.findFirst({ where: eq(industries.name, 'Robotics') }));
+
+    companyIdFrom(await client.post('/companies', { name: 'Skynet', websiteUrl: 'skynet.com', newIndustry: 'ROBOTICS' }));
+    const robotics = (await db.select().from(industries)).filter((i) => i.name.toLowerCase() === 'robotics');
+    assert.equal(robotics.length, 1, 'the same name in other capitals is the same industry');
   });
 
   test('anonymous visitors cannot add companies', async () => {
@@ -119,6 +123,13 @@ describe('browsing and searching', () => {
     assert.match(detail.text, /Umbrella Labs/);
     assert.ok(detail.text.includes(`<title>Umbrella Labs — ${SITE_NAME}</title>`), 'the configured site name is in the title');
     assert.ok(detail.text.includes(`<strong>${SITE_NAME}</strong>`), 'and in the nav bar');
+  });
+
+  test('industries are listed A–Z, whatever order they were added in', async () => {
+    const page = (await new TestClient(baseUrl).get('/')).text;
+    const filterNames = [...page.matchAll(/name="industry" value="\d+"[^>]*>\s*([^<]+?)\s*</g)].map((m) => m[1].trim());
+    assert.ok(filterNames.length >= 2);
+    assert.deepEqual(filterNames, [...filterNames].sort((a, b) => a.localeCompare(b)));
   });
 
   test('searching by name', async () => {

@@ -311,6 +311,24 @@ textarea {
   width: auto;
 }
 
+/* A wide table scrolls sideways within itself on narrow screens, rather than
+   widening the page. */
+.table-scroll {
+  overflow-x: auto;
+}
+
+/* The Admin page's Industries table: each cell's form on one line, and every
+   cell centred on it. */
+.industry-table td {
+  vertical-align: middle;
+}
+
+.industry-table form {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
 .error {
   color: #b3261e;
 }
