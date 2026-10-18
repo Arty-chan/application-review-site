@@ -119,6 +119,12 @@ textarea {
   color: var(--color-accent);
 }
 
+/* Something people would want to avoid (anything the search can Exclude). */
+.tag-warning {
+  background: #fbeaea;
+  color: #a3261f;
+}
+
 .navbar {
   display: flex;
   flex-wrap: wrap;

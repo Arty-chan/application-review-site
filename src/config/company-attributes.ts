@@ -92,7 +92,7 @@ export const companyAttributes: CompanyAttributeDef[] = [
   {
     key: 'publicHiringProcess',
     label: 'Publishes hiring process',
-    helpText: 'Whether the stages are listed on the job description or website — not what they are',
+    helpText: 'Stages are listed on the job description or website',
     defaultVisibility: 'public',
     filter: 'require',
   },

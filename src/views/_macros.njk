@@ -1,6 +1,12 @@
-{% macro companyTags(company, attributes) %}
+{#
+  A company's "yes" attributes as tags: the good news (warnings: false), or the
+  warnings (warnings: true) — anything the search can Exclude is a warning.
+#}
+{% macro companyTags(company, attributes, warnings) %}
   {% for attr in attributes %}
-    {% if company[attr.key] == true %}<span class="tag tag-yes">{{ attr.label }}</span>{% endif %}
+    {% if company[attr.key] == true and (attr.filter == 'exclude') == warnings %}
+      <span class="tag {{ 'tag-warning' if warnings else 'tag-yes' }}">{{ attr.label }}</span>
+    {% endif %}
   {% endfor %}
 {% endmacro %}
 

@@ -93,7 +93,7 @@
       </p>
       <p class="review-body">{{ review.comment }}</p>
       <div class="tags">
-        {% for report in visibleReports %}{% if review[report.key] %}<span class="tag tag-yes">{{ report.label }}</span>{% endif %}{% endfor %}
+        {% for report in visibleReports %}{% if review[report.key] %}<span class="tag tag-warning">{{ report.label }}</span>{% endif %}{% endfor %}
       </div>
       {# Your own review (or any, for an admin) can be changed; anyone else's can be flagged. #}
       {% if isAuthed %}

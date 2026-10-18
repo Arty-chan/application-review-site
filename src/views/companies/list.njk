@@ -94,8 +94,11 @@
           {% endif %}
         </div>
         <div class="tags">
-          {{ m.companyTags(company, attributes) }}
-          {% for report in company.reports %}<span class="tag tag-yes">{{ m.reportSummary(report) }}</span>{% endfor %}
+          {{ m.companyTags(company, attributes, false) }}
+        </div>
+        <div class="tags">
+          {{ m.companyTags(company, attributes, true) }}
+          {% for report in company.reports %}<span class="tag tag-warning">{{ m.reportSummary(report) }}</span>{% endfor %}
         </div>
       </div>
     {% endfor %}

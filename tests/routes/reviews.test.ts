@@ -212,8 +212,8 @@ describe('no-reply reports', () => {
 
     // Signed in: each review shows the reports it ticked, and only those.
     const signedIn = await admin.get(`/companies/${company.id}`);
-    assert.match(signedIn.text, /<span class="tag tag-yes">No reply after application<\/span>/);
-    assert.doesNotMatch(signedIn.text, /<span class="tag tag-yes">No reply after a call<\/span>/);
+    assert.match(signedIn.text, /<span class="tag tag-warning">No reply after application<\/span>/);
+    assert.doesNotMatch(signedIn.text, /<span class="tag tag-warning">No reply after a call<\/span>/);
 
     // Public: the count, on the company page and its search result.
     const anonymous = new TestClient(baseUrl);
