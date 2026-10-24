@@ -5,8 +5,11 @@
 
 <p class="note">This site is an attempt at helping people navigate their job search and share their experiences. Everything on this site is contributed by its members. Membership is invite-only. Members can flag reviews. <a href="https://github.com/Arty-chan/application-review-site">Code on GitHub</a>.</p>
 
-<form method="get" action="/" class="search-layout">
+{# The search form is just the filters: forms can't contain other forms, and
+   each result's favourite star is one. The sort dropdowns join it with form="search". #}
+<div class="search-layout">
   <aside class="filters card">
+  <form id="search" method="get" action="/">
     <label>Search
       <input class="input" type="text" name="q" value="{{ q }}" placeholder="Company name">
     </label>
@@ -54,12 +57,13 @@
 
     <button class="btn" type="submit">Apply filters</button>
     <a href="/" class="btn btn-secondary">Clear</a>
+  </form>
   </aside>
 
   <section class="results">
     <div class="sort-bar">
       <label for="sort">Sort by</label>
-      <select id="sort" name="sort" class="input" data-autosubmit>
+      <select id="sort" name="sort" class="input" form="search" data-autosubmit>
         <option value="name" {% if selected.sort == 'name' %}selected{% endif %}>Alphabetical</option>
         {% if canSeeReviews %}
           <option value="ratingCount" {% if selected.sort == 'ratingCount' %}selected{% endif %}>Number of ratings</option>
@@ -67,7 +71,7 @@
         {% endif %}
         <option value="updated" {% if selected.sort == 'updated' %}selected{% endif %}>Updated date</option>
       </select>
-      <select name="order" class="input" aria-label="Order" data-autosubmit>
+      <select name="order" class="input" aria-label="Order" form="search" data-autosubmit>
         <option value="asc" {% if selected.order == 'asc' %}selected{% endif %}>Ascending</option>
         <option value="desc" {% if selected.order == 'desc' %}selected{% endif %}>Descending</option>
       </select>
@@ -77,9 +81,26 @@
       <p>No companies match your search.</p>
     {% endif %}
     {% for company in companies %}
-      <div class="card company-card">
-        <h2><a href="/companies/{{ company.id }}">{{ company.name }}</a></h2>
-        {{ m.averageRating(company) }}
+      <div class="card company-card" id="company-{{ company.id }}">
+        <div class="company-card-title">
+          <h2><a href="/companies/{{ company.id }}">{{ company.name }}</a></h2>
+          {% if currentUser %}
+            {% set starLabel = "Unfavourite" if company.isFavorite else "Favourite" %}
+            <form method="post" action="/companies/{{ company.id }}/favorite{{ '/delete' if company.isFavorite }}">
+              <input type="hidden" name="_csrf" value="{{ csrfToken }}">
+              {# Back to these same results, at this card, once it's toggled. #}
+              <input type="hidden" name="back" value="{{ currentPath }}#company-{{ company.id }}">
+              <button class="star-toggle{{ ' on' if company.isFavorite }}" type="submit" title="{{ starLabel }}" aria-label="{{ starLabel }} {{ company.name }}">
+                {{- "★" if company.isFavorite else "☆" -}}
+              </button>
+            </form>
+          {% endif %}
+        </div>
+        <p class="company-facts">
+          {% if company.ratingCount > 0 %}<strong>{{ m.ratingSummary(company) }}</strong>{% endif %}
+          {% if company.employeeSizeRange %}<span>{{ company.employeeSizeRange }} employees</span>{% endif %}
+          {% if company.careersUrl %}<a href="{{ company.careersUrl }}" target="_blank" rel="noopener">Careers page <span aria-hidden="true">↗</span></a>{% endif %}
+        </p>
         <div class="tags">
           {% if company.hiresAnywhere %}
             <span class="tag">Anywhere</span>
@@ -105,6 +126,6 @@
 
     {{ m.pagination(page, totalPages, pages, selected.query) }}
   </section>
-</form>
+</div>
 
 {% endblock %}

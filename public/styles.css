@@ -441,6 +441,47 @@ label {
   font-size: 1.1rem;
 }
 
+/* A search card's name, with its favourite star on the right. */
+.company-card-title {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: var(--space-sm);
+}
+
+.star-toggle {
+  background: none;
+  border: none;
+  padding: 0 0.25rem;
+  margin: 0;
+  font-size: 1.4rem;
+  line-height: 1;
+  color: var(--color-muted);
+  cursor: pointer;
+}
+
+.star-toggle.on {
+  color: var(--color-star);
+}
+
+/* A search card's rating, size and careers link on one line, dot-separated —
+   just those it has. */
+.company-facts {
+  margin: 0 0 var(--space-sm);
+}
+
+/* inline-block, so a link's underline doesn't run under the dot. */
+.company-facts > * + *::before {
+  content: "·";
+  display: inline-block;
+  margin: 0 0.4em 0 0.1em;
+  color: var(--color-muted);
+}
+
+.company-facts:not(:has(*)) {
+  display: none;
+}
+
 .rating {
   font-weight: 600;
   margin: 0 0 var(--space-sm);
@@ -478,6 +519,8 @@ label {
 .note {
   font-size: 0.85rem;
   color: var(--color-muted);
+  margin-top: 0;
+  margin-bottom: 2rem;
 }
 
 /* See infoTip in _macros.njk. */

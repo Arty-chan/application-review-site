@@ -4,7 +4,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '../../src/db/client.js';
 import { users, companies, reviews } from '../../src/db/schema.js';
 import { createToken } from '../../src/lib/tokens.js';
-import { startServer, TestClient, createUser, TEST_PASSWORD } from '../helpers/http.js';
+import { startServer, TestClient, createUser, assertNoNestedForms, TEST_PASSWORD } from '../helpers/http.js';
 import { PASSWORD_MIN_LENGTH, DISPLAY_NAME_MAX_LENGTH } from '../../src/config/site.js';
 
 let baseUrl: string;
@@ -61,6 +61,26 @@ describe('favorites', () => {
     await member.post(`/companies/${company.id}/favorite/delete`);
     assert.ok(!(await member.get('/account/favorites')).text.includes(company.name));
     assert.match((await member.get(`/companies/${company.id}`)).text, /☆ Favourite/);
+  });
+
+  test('the star on a search result goes back to the same results', async () => {
+    const company = await makeCompany();
+    const results = `/?q=${encodeURIComponent(company.name)}&sort=name`;
+    const page = (await member.get(results)).text;
+    assert.match(page, /title="Favourite"/);
+    assertNoNestedForms(page);
+
+    const back = `${results}#company-${company.id}`;
+    assert.equal((await member.post(`/companies/${company.id}/favorite`, { back })).location, back);
+    assert.match((await member.get(results)).text, /title="Unfavourite"/);
+  });
+
+  test('a favourite button can only send you back to a page on this site', async () => {
+    const company = await makeCompany();
+    for (const back of ['https://elsewhere.example/', '//elsewhere.example/', '/\\elsewhere.example/']) {
+      const res = await member.post(`/companies/${company.id}/favorite`, { back });
+      assert.equal(res.location, `/companies/${company.id}`, `${back} is ignored`);
+    }
   });
 });
 

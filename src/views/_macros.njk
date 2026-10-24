@@ -51,10 +51,12 @@
 {% endmacro %}
 
 {# A company's average rating, over the reviews that gave one — none for viewers who can't see reviews (see loadCompanyMeta). #}
+{% macro ratingSummary(meta) -%}
+  {{ meta.avgRating | round(1) }} / 5 ({{ meta.ratingCount }} rating{{ "s" if meta.ratingCount != 1 }})
+{%- endmacro %}
+
 {% macro averageRating(meta) %}
-  {% if meta.ratingCount > 0 %}
-    <p class="rating">{{ meta.avgRating | round(1) }} / 5 ({{ meta.ratingCount }} rating{{ "s" if meta.ratingCount != 1 }})</p>
-  {% endif %}
+  {% if meta.ratingCount > 0 %}<p class="rating">{{ ratingSummary(meta) }}</p>{% endif %}
 {% endmacro %}
 
 {# Who a visibility level (set on the Admin page) lets see something — finishes "visible to …". #}

@@ -132,6 +132,16 @@ describe('browsing and searching', () => {
     assert.deepEqual(filterNames, [...filterNames].sort((a, b) => a.localeCompare(b)));
   });
 
+  test("a search result shows the company's size and careers page", async () => {
+    const client = await signedIn();
+    companyIdFrom(await client.post('/companies', {
+      name: 'Facts Co', websiteUrl: 'facts.com', careersUrl: 'facts.com/jobs', employeeSizeRange: '51-200',
+    }));
+    const page = (await new TestClient(baseUrl).get('/?q=facts')).text;
+    assert.match(page, /51-200 employees/);
+    assert.match(page, /<a href="https:\/\/facts.com\/jobs" target="_blank" rel="noopener">Careers page/);
+  });
+
   test('searching by name', async () => {
     const names = resultNames((await new TestClient(baseUrl).get('/?q=umbr')).text);
     assert.deepEqual(names, ['Umbrella Labs']);

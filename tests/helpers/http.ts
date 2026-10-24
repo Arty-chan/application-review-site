@@ -122,6 +122,16 @@ export async function seedReferenceData() {
   return { europe, americas, software, finance };
 }
 
+/** Fails if a form sits inside another: browsers ignore the inner one, so its
+ * button would submit the outer form instead — which no HTTP-level test sees. */
+export function assertNoNestedForms(html: string): void {
+  let depth = 0;
+  for (const [tag] of html.matchAll(/<\/?form\b/g)) {
+    depth += tag.startsWith('</') ? -1 : 1;
+    assert.ok(depth <= 1, 'a form inside another form');
+  }
+}
+
 /** Company names shown as results on a list page. */
 export function resultNames(html: string): string[] {
   return [...html.matchAll(/<h2><a href="\/companies\/\d+">([^<]+)<\/a><\/h2>/g)].map((m) => m[1]);

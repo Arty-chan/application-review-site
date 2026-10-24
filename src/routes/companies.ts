@@ -200,14 +200,22 @@ companiesRouter.get('/', async (req, res) => {
   const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   const meta = await loadCompanyMeta(rows.map((c) => c.id), viewer);
+  const favoriteIds = new Set(viewer && rows.length > 0
+    ? (await db.select({ id: favorites.companyId }).from(favorites)
+      .where(and(eq(favorites.userId, viewer.id), inArray(favorites.companyId, rows.map((c) => c.id)))))
+      .map((f) => f.id)
+    : []);
 
   res.render('companies/list', {
     companies: rows.map((c) => {
       const companyMeta = meta.get(c.id)!;
       const { hiresAnywhere, countryGroups } = describeLocations(regionTree, new Set(companyMeta.countries.map((x) => x.code)));
       // Cards show the compact version; the company page has the full list.
-      return { ...c, ...companyMeta, hiresAnywhere, regionSummary: summarizeCountryGroups(countryGroups) };
+      return {
+        ...c, ...companyMeta, hiresAnywhere, regionSummary: summarizeCountryGroups(countryGroups), isFavorite: favoriteIds.has(c.id),
+      };
     }),
+    currentPath: req.originalUrl,
     q,
     page,
     totalPages,
