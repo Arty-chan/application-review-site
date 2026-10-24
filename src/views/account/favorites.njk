@@ -1,11 +1,11 @@
 {% extends "base.njk" %}
-{% block title %}Favorites — {{ siteName }}{% endblock %}
+{% block title %}Favourites — {{ siteName }}{% endblock %}
 {% block content %}
 
-<h1>Favorites</h1>
+<h1>Favourites</h1>
 
 {% if companies.length == 0 %}
-  <p>You haven't favorited any companies yet.</p>
+  <p>You haven't favourited any companies yet.</p>
 {% endif %}
 
 {% for company in companies %}

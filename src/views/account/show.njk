@@ -90,7 +90,7 @@
 
 <div class="card">
   <h3>Delete account</h3>
-  <p class="note">Removes the account and its favorites. Reviews and flags stay, shown under the name this account had at the time of deletion.</p>
+  <p class="note">Removes the account and its favourites. Reviews and flags stay, shown under the name this account had at the time of deletion.</p>
   <form method="post" action="/users/{{ viewedUser.id }}/delete" data-confirm="Delete this account? This cannot be undone.">
     <input type="hidden" name="_csrf" value="{{ csrfToken }}">
     <button class="btn btn-secondary" type="submit">{% if isSelf %}Delete my account{% else %}Delete this account{% endif %}</button>

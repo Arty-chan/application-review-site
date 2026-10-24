@@ -52,15 +52,15 @@ describe('favorites', () => {
   test('favoriting and unfavoriting a company', async () => {
     const company = await makeCompany();
 
-    assert.match((await member.get(`/companies/${company.id}`)).text, /☆ Favorite/);
+    assert.match((await member.get(`/companies/${company.id}`)).text, /☆ Favourite/);
 
     await member.post(`/companies/${company.id}/favorite`);
     assert.ok((await member.get('/account/favorites')).text.includes(company.name));
-    assert.match((await member.get(`/companies/${company.id}`)).text, /★ Unfavorite/, 'the button toggles');
+    assert.match((await member.get(`/companies/${company.id}`)).text, /★ Unfavourite/, 'the button toggles');
 
     await member.post(`/companies/${company.id}/favorite/delete`);
     assert.ok(!(await member.get('/account/favorites')).text.includes(company.name));
-    assert.match((await member.get(`/companies/${company.id}`)).text, /☆ Favorite/);
+    assert.match((await member.get(`/companies/${company.id}`)).text, /☆ Favourite/);
   });
 });
 

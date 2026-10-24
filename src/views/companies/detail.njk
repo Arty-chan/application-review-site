@@ -8,7 +8,7 @@
   {% if isAuthed %}
     <form method="post" action="/companies/{{ company.id }}/favorite{{ '/delete' if isFavorite }}">
       <input type="hidden" name="_csrf" value="{{ csrfToken }}">
-      <button class="btn btn-secondary" type="submit">{{ "★ Unfavorite" if isFavorite else "☆ Favorite" }}</button>
+      <button class="btn btn-secondary" type="submit">{{ "★ Unfavourite" if isFavorite else "☆ Favourite" }}</button>
     </form>
   {% endif %}
 </div>

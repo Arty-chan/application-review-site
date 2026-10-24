@@ -9,5 +9,5 @@
 # confirming which setup you actually have before deploying.
 
 example.com {
-    reverse_proxy 127.0.0.1:6559
+    reverse_proxy :6559
 }

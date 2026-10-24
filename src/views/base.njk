@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="en">
+<html lang="en-CA">
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -14,7 +14,7 @@
       {% if currentUser %}
         <a href="/companies/new">Add company</a>
         {% if canUseImportPage(currentUser) %}<a href="/import">Import</a>{% endif %}
-        <a href="/account/favorites">Favorites</a>
+        <a href="/account/favorites">Favourites</a>
         <a href="/account/reviews">My reviews</a>
         <a href="/invites">Invite</a>
         {% if currentUser.role == 'admin' %}<a href="/admin">Admin</a>{% endif %}
